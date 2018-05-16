@@ -10,4 +10,4 @@ default = []
 
 [dependencies.sdl2]
 version = "0.31"
-features = ["mixer", "image", "ttf"]
+features = ["use_mac_framework", "mixer", "image", "ttf"]
