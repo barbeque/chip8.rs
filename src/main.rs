@@ -37,7 +37,7 @@ impl ComputerState {
             memory: [0u8; 4096],
             registers: [0u8; 16],
             index: 0,
-            program_counter: 0,
+            program_counter: 0x200, // the start of program memory
             gfx: [0u8; (64 * 32)],
             delay_timer: 0,
             sound_timer: 0,
@@ -45,6 +45,12 @@ impl ComputerState {
             sp: 0,
             keys: [0u8; 16]
         }
+
+        // TODO: load ROM contents (font set)
+    }
+
+    pub fn load_program(path) {
+        // TODO: load program
     }
 
     pub fn step() {
@@ -75,7 +81,7 @@ pub fn main() {
 
     let mut chip8 = ComputerState::new();
 
-    // TODO: Program loading
+    chip8.load_program("pong");
 
     'running: loop {
         i = (i + 1) % 255;
