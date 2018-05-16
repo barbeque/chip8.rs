@@ -46,6 +46,13 @@ impl ComputerState {
             keys: [0u8; 16]
         }
     }
+
+    pub fn step() {
+        // fetch
+        // decode
+        // execute
+        // update timers (60Hz - need timing)
+    }
 }
 
 pub fn main() {
@@ -68,10 +75,17 @@ pub fn main() {
 
     let mut chip8 = ComputerState::new();
 
+    // TODO: Program loading
+
     'running: loop {
         i = (i + 1) % 255;
         canvas.set_draw_color(Color::RGB(i, 64, 255 - i));
         canvas.clear();
+
+        chip8.step();
+        // TODO: Draw contents of memory
+        // TODO: Set keymap state
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
