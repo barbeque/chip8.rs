@@ -1,0 +1,13 @@
+[package]
+name = "chip8"
+version = "0.1.0"
+authors = ["mike stedman <barbeque@users.noreply.github.com>"]
+
+[dependencies]
+
+[features]
+default = []
+
+[dependencies.sdl2]
+version = "0.31"
+features = ["mixer", "image", "ttf"]
