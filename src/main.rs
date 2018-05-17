@@ -49,11 +49,11 @@ impl ComputerState {
         // TODO: load ROM contents (font set)
     }
 
-    pub fn load_program(path) {
+    pub fn load_program(&mut self, path: &str) {
         // TODO: load program
     }
 
-    pub fn step() {
+    pub fn step(&mut self) {
         // fetch
         // decode
         // execute
