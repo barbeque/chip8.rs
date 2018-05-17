@@ -55,6 +55,8 @@ impl ComputerState {
 
     pub fn step(&mut self) {
         // fetch
+        let pc: usize = self.program_counter as usize;
+        self.opcode = (self.memory[pc] as u16) << 8 | (self.memory[pc + 1] as u16);
         // decode
         // execute
         // update timers (60Hz - need timing)
