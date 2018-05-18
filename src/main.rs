@@ -56,8 +56,12 @@ impl ComputerState {
         // TODO: load program
     }
 
-    pub fn decode(instruction: u16) -> Chip8Opcode {
+    pub fn decode(&self, instruction: u16) -> Chip8Opcode {
         Chip8Opcode::DumpRegisters(0) // TODO
+    }
+
+    pub fn execute(&mut self, op: Chip8Opcode) {
+
     }
 
     pub fn step(&mut self) {
@@ -65,7 +69,9 @@ impl ComputerState {
         let pc: usize = self.program_counter as usize;
         let instruction = (self.memory[pc] as u16) << 8 | (self.memory[pc + 1] as u16);
         // decode
+        let decoded = self.decode(instruction);
         // execute
+        self.execute(decoded);
         // update timers (60Hz - need timing)
     }
 }
