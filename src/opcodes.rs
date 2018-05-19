@@ -3,6 +3,7 @@ pub type Chip8Address = u32; // Only the bottom 3 bytes are used
 pub type Chip8Register = u8; // There's only 16 of them
 pub type Chip8Value = u16;
 
+#[derive(Debug)]
 pub enum Chip8Opcode {
     /* 0NNN */ Call(Chip8Address),
     /* 00E0 */ DisplayClear,
@@ -39,4 +40,4 @@ pub enum Chip8Opcode {
     /* FX33 */ ReadRegisterAsBCD(Chip8Register), // store the BCD of Vx in I
     /* FX55 */ DumpRegisters(Chip8Register), // store V0...Vx in memory starting at I
     /* FX65 */ FillRegisters(Chip8Register), // read from I to V0...Vx
-}   
+}

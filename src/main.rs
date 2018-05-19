@@ -61,7 +61,9 @@ impl ComputerState {
     }
 
     pub fn execute(&mut self, op: Chip8Opcode) {
-
+        match op {
+            _ => panic!("pc={} Not implemented yet: '{:?}'", self.program_counter, op)
+        }
     }
 
     pub fn step(&mut self) {
@@ -106,6 +108,7 @@ pub fn main() {
         chip8.step();
         // TODO: Draw contents of memory
         // TODO: Set keymap state
+        // TODO: run this inner loop only 60 hz
 
         for event in event_pump.poll_iter() {
             match event {
