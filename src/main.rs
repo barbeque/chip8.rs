@@ -96,6 +96,19 @@ impl ComputerState {
                 self.set_register(target_register, rand::random::<u8>() & value);
             },
             // TODO: Draw... lots more
+            Chip8Opcode::SetDelayTimer(target_register) => {
+                let value = self.get_register(target_register);
+                self.delay_timer = value;
+            },
+            Chip8Opcode::SetSoundTimer(target_register) => {
+                let value = self.get_register(target_register);
+                self.sound_timer = value;
+            },
+            Chip8Opcode::AddToIndexRegister(target_register) => {
+                let value = self.get_register(target_register);
+                self.index += value as u16; // any special overflow conditions?
+            },
+            // TODO: use sprite, etc.
             _ => panic!(
                 "pc={} Not implemented yet: '{:?}'",
                 self.program_counter, op
@@ -112,6 +125,10 @@ impl ComputerState {
         // execute
         self.execute(decoded);
         // update timers (60Hz - need timing)
+    }
+
+    fn get_register(&self, register_index: Chip8Register) -> Chip8Value {
+        self.registers[register_index as usize]
     }
 
     fn set_register(&mut self, register_index: Chip8Register, register_value: Chip8Value) {

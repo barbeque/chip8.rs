@@ -35,7 +35,7 @@ pub enum Chip8Opcode {
     /* FX15 */ SetDelayTimer(Chip8Register),
     /* FX18 */ SetSoundTimer(Chip8Register),
     /* FX1E */ AddToIndexRegister(Chip8Register), // I += Vx
-    /* FX29 */ LoadSprite(Chip8Register), // I = sprites[Vx]
+    /* FX29 */ UseSprite(Chip8Register), // I = sprites[Vx]
     /* FX33 */ ReadRegisterAsBCD(Chip8Register), // store the BCD of Vx in I
     /* FX55 */ DumpRegisters(Chip8Register), // store V0...Vx in memory starting at I
     /* FX65 */ FillRegisters(Chip8Register), // read from I to V0...Vx
