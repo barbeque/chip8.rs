@@ -17,6 +17,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "chip8"
 version = "0.1.0"
 dependencies = [
+ "rand 0.3.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2 0.31.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

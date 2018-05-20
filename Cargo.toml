@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["mike stedman <barbeque@users.noreply.github.com>"]
 
 [dependencies]
+rand = "*"
 
 [features]
 default = []

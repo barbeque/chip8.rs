@@ -1,6 +1,6 @@
 pub type Chip8Address = u32; // Only the bottom 3 bytes are used
 pub type Chip8Register = u8; // There's only 16 of them
-pub type Chip8Value = u16;
+pub type Chip8Value = u8;
 
 #[derive(Debug)]
 pub enum Chip8Opcode {
@@ -27,7 +27,7 @@ pub enum Chip8Opcode {
     /* ANNN */ SetIndexRegister(Chip8Address),
     /* BNNN */ JumpFromV0(Chip8Address), // jump to V0 + NNN
     /* CXNN */ Random(Chip8Register, Chip8Value), // Vx = rand() & NN
-    /* DXYN */ Draw(Chip8Register, Chip8Register, u8),
+    /* DXYN */ Draw(Chip8Register, Chip8Register, u8 /* really 4-bit: FIXME */),
     /* EX9E */ SkipNextIfKeyDown(Chip8Register),
     /* EXA1 */ SkipNextIfKeyUp(Chip8Register),
     /* FX07 */ ReadDelayTimer(Chip8Register), // Store in register

@@ -1,10 +1,12 @@
 extern crate sdl2;
+extern crate rand;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use std::path::PathBuf;
 use std::time::Duration;
+use rand::Rng;
 
 mod opcodes;
 use opcodes::*;
@@ -19,7 +21,7 @@ struct ComputerState {
     // Index register
     index: u16,
     // Program counter
-    program_counter: u16,
+    program_counter: Chip8Address,
     // 2K Video memory
     gfx: [u8; 64 * 32],
     // Delay timer
@@ -78,12 +80,22 @@ impl ComputerState {
 
     pub fn execute(&mut self, op: Chip8Opcode) {
         match op {
+            // TODO: Call
             Chip8Opcode::DisplayClear => {
                 for i in 0..self.gfx.len() {
                     // FIXME: is a more succinct way to do this?
                     self.gfx[i] = 0;
                 }
             },
+            // TODO: Return from sub
+            Chip8Opcode::Goto(address) => {
+                self.program_counter = address;
+            },
+            // TODO: Call Sub... lots more
+            Chip8Opcode::Random(target_register, value) => {
+                self.set_register(target_register, rand::random::<u8>() & value);
+            },
+            // TODO: Draw... lots more
             _ => panic!(
                 "pc={} Not implemented yet: '{:?}'",
                 self.program_counter, op
@@ -100,6 +112,10 @@ impl ComputerState {
         // execute
         self.execute(decoded);
         // update timers (60Hz - need timing)
+    }
+
+    fn set_register(&mut self, register_index: Chip8Register, register_value: Chip8Value) {
+        self.registers[register_index as usize] = register_value;
     }
 }
 
