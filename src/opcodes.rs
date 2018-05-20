@@ -1,4 +1,3 @@
-
 pub type Chip8Address = u32; // Only the bottom 3 bytes are used
 pub type Chip8Register = u8; // There's only 16 of them
 pub type Chip8Value = u16;
@@ -22,7 +21,7 @@ pub enum Chip8Opcode {
     /* 8XY4 */ IncrementRegisterWithRegister(Chip8Register, Chip8Register), // Vx += Vy
     /* 8XY5 */ DecrementRegisterWithRegister(Chip8Register, Chip8Register), // Vx -= Vy
     /* 8XY6 */ ShiftRegisterByRegister(Chip8Register, Chip8Register),
-    /* 8XY7 */ DecrementYRegisterByXRegister(Chip8Register, Chip8Register), // Vx = Vy - Vx
+    /* 8XY7 */ YRegisterMinusXRegister(Chip8Register, Chip8Register), // Vx = Vy - Vx
     /* 8XYE */ LeftShiftRegisterByRegister(Chip8Register, Chip8Register),
     /* 9XY0 */ SkipNextIfRegistersNotEqual(Chip8Register, Chip8Register),
     /* ANNN */ SetIndexRegister(Chip8Address),
