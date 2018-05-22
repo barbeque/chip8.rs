@@ -61,10 +61,7 @@ impl ComputerState {
         absolute_path.push(relative_path);
         let target = absolute_path.as_path();
 
-        if target.exists() {
-            let target_path = target.to_str().unwrap();
-            println!("Loading CHIP-8 program '{}'", target_path)
-        } else {
+        if !target.exists() {
             // Not found...
             let target_path = target.to_str().unwrap(); // FIXME: might cause a crash if it's a really mangled string. need a safer unwrap.
             panic!(
@@ -72,6 +69,10 @@ impl ComputerState {
                 target_path
             );
         }
+
+        // Load the program into RAM
+        let target_path = target.to_str().unwrap();
+        println!("Loading CHIP-8 program '{}'", target_path)
     }
 
     pub fn decode(&self, instruction: u16) -> Chip8Opcode {
