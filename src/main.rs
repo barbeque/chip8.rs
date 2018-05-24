@@ -76,7 +76,70 @@ impl ComputerState {
     }
 
     pub fn decode(&self, instruction: u16) -> Chip8Opcode {
-        Chip8Opcode::DumpRegisters(0) // TODO
+        // Instructions are stored big-endian so we're good
+        let top_nibble = (instruction & 0xf000) >> 12;
+        if(top_nibble == 0x0) {
+            // CALL
+        }
+        else if(top_nibble == 0x1) {
+            // 1NNN - jump
+            return Chip8Opcode::Goto(instruction & 0xfff);
+        }
+        else if(top_nibble == 0x2) {
+            // 2NNN - call sub at NNN
+            return Chip8Opcode::CallSub(instruction & 0xfff);
+        }
+        else if(top_nibble == 0x3) {
+        }
+        else if(top_nibble == 0x4) {
+
+        }
+        else if(top_nibble == 0x5) {
+
+        }
+        else if(top_nibble == 0x6) {
+            // assign
+        }
+        else if(top_nibble == 0x7) {
+            // increment w/o carry
+        }
+        else if(top_nibble == 0x8) {
+            let bottom_nibble = (instruction & 0x000f);
+        }
+        else if(top_nibble == 0x9) {
+            // skip next if Vx != Vy
+        }
+        else if(top_nibble == 0xa) {
+            // set index
+        }
+        else if(top_nibble == 0xb) {
+            // far jump
+        }
+        else if(top_nibble == 0xc) {
+            // random
+        }
+        else if(top_nibble == 0xd) {
+            // draw sprite
+        }
+        else if(top_nibble == 0xe) {
+            // key operations depending on bottom byte
+            let bottom_byte = (instruction & 0xff);
+            if(bottom_byte == 0x9e) {
+                // skip if key stored in Vx is pressed
+            }
+            else if(bottom_byte == 0xa1) {
+                // skip if key stored in Vx is not pressed
+            }
+            else {
+                panic!("Malformed key press instruction {:x}", instruction);
+            }
+        }
+        else if(top_nibble == 0xf) {
+            // timer ops...
+            let bottom_byte = (instruction & 0xff);
+        }
+
+        panic!("Don't know how to decode {} yet.", instruction);
     }
 
     pub fn execute(&mut self, op: Chip8Opcode) {
@@ -183,5 +246,20 @@ pub fn main() {
 
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000u32 / 60));
+    }
+}
+
+#[cfg(test)]
+mod computer_tests {
+    fn top_nibble(instruction: u16) -> u8 {
+        ((instruction & 0xf000) >> 8) as u8
+    }
+
+    #[test]
+    fn top_nibble_works() {
+        // sanity test
+        assert_eq!(top_nibble(0x0fff), 0x00);
+        assert_eq!(top_nibble(0x1fff), 0x10);
+        assert_eq!(top_nibble(0x2fff), 0x20);
     }
 }

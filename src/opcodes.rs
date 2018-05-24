@@ -1,4 +1,4 @@
-pub type Chip8Address = u32; // Only the bottom 3 bytes are used
+pub type Chip8Address = u16; // Only the bottom 3 nibbles are used
 pub type Chip8Register = u8; // There's only 16 of them
 pub type Chip8Value = u8;
 
