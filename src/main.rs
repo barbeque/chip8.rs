@@ -78,65 +78,69 @@ impl ComputerState {
     pub fn decode(&self, instruction: u16) -> Chip8Opcode {
         // Instructions are stored big-endian so we're good
         let top_nibble = (instruction & 0xf000) >> 12;
-        if(top_nibble == 0x0) {
+        if top_nibble == 0x0 {
             // CALL
         }
-        else if(top_nibble == 0x1) {
+        else if top_nibble == 0x1 {
             // 1NNN - jump
             return Chip8Opcode::Goto(instruction & 0xfff);
         }
-        else if(top_nibble == 0x2) {
+        else if top_nibble == 0x2 {
             // 2NNN - call sub at NNN
             return Chip8Opcode::CallSub(instruction & 0xfff);
         }
-        else if(top_nibble == 0x3) {
+        else if top_nibble == 0x3 {
         }
-        else if(top_nibble == 0x4) {
+        else if top_nibble == 0x4 {
 
         }
-        else if(top_nibble == 0x5) {
+        else if top_nibble == 0x5 {
 
         }
-        else if(top_nibble == 0x6) {
+        else if top_nibble == 0x6 {
             // assign
         }
-        else if(top_nibble == 0x7) {
+        else if top_nibble == 0x7 {
             // increment w/o carry
         }
-        else if(top_nibble == 0x8) {
+        else if top_nibble == 0x8 {
             let bottom_nibble = (instruction & 0x000f);
         }
-        else if(top_nibble == 0x9) {
+        else if top_nibble == 0x9 {
             // skip next if Vx != Vy
         }
-        else if(top_nibble == 0xa) {
+        else if top_nibble == 0xa {
             // set index
         }
-        else if(top_nibble == 0xb) {
+        else if top_nibble == 0xb {
             // far jump
+            return Chip8Opcode::JumpFromV0(instruction & 0xfff);
         }
-        else if(top_nibble == 0xc) {
+        else if top_nibble == 0xc {
             // random
         }
-        else if(top_nibble == 0xd) {
+        else if top_nibble == 0xd {
             // draw sprite
         }
-        else if(top_nibble == 0xe) {
+        else if top_nibble == 0xe {
             // key operations depending on bottom byte
-            let bottom_byte = (instruction & 0xff);
-            if(bottom_byte == 0x9e) {
+            let bottom_byte = instruction & 0xff;
+            let register = (instruction & (0xf00) >> 8) as u8;
+            if bottom_byte == 0x9e {
                 // skip if key stored in Vx is pressed
+                return Chip8Opcode::SkipNextIfKeyDown(register);
             }
-            else if(bottom_byte == 0xa1) {
+            else if bottom_byte == 0xa1 {
                 // skip if key stored in Vx is not pressed
+                return Chip8Opcode::SkipNextIfKeyUp(register);
             }
             else {
                 panic!("Malformed key press instruction {:x}", instruction);
             }
         }
-        else if(top_nibble == 0xf) {
+        else if top_nibble == 0xf {
             // timer ops...
-            let bottom_byte = (instruction & 0xff);
+            let bottom_byte = instruction & 0xff;
         }
 
         panic!("Don't know how to decode {} yet.", instruction);
