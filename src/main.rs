@@ -287,4 +287,10 @@ mod computer_tests {
         assert_eq!(test_decode(0xe19e), Chip8Opcode::SkipNextIfKeyDown(1));
         assert_eq!(test_decode(0xe1a1), Chip8Opcode::SkipNextIfKeyUp(1));
     }
+
+    #[test]
+    #[should_panic]
+    fn mangled_keydown_decode_works() {
+        test_decode(0xe3ff); // 0xff is not a valid discriminating byte, so it should bail
+    }
 }
