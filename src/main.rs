@@ -125,7 +125,7 @@ impl ComputerState {
         else if top_nibble == 0xe {
             // key operations depending on bottom byte
             let bottom_byte = instruction & 0xff;
-            let register = (instruction & (0xf00) >> 8) as u8;
+            let register = ((instruction & 0x0f00) >> 8) as u8;
             if bottom_byte == 0x9e {
                 // skip if key stored in Vx is pressed
                 return Chip8Opcode::SkipNextIfKeyDown(register);
@@ -255,8 +255,20 @@ pub fn main() {
 
 #[cfg(test)]
 mod computer_tests {
+    use ComputerState;
+    use opcodes::Chip8Opcode;
+
     fn top_nibble(instruction: u16) -> u8 {
         ((instruction & 0xf000) >> 8) as u8
+    }
+
+    fn new_test_emulator() -> ComputerState {
+        ComputerState::new()
+    }
+
+    fn test_decode(instruction: u16) -> Chip8Opcode {
+        let computer = new_test_emulator();
+        computer.decode(instruction)
     }
 
     #[test]
@@ -265,5 +277,14 @@ mod computer_tests {
         assert_eq!(top_nibble(0x0fff), 0x00);
         assert_eq!(top_nibble(0x1fff), 0x10);
         assert_eq!(top_nibble(0x2fff), 0x20);
+    }
+
+    #[test]
+    fn basic_decodes_work() {
+        assert_eq!(test_decode(0x1abc), Chip8Opcode::Goto(0xabc));
+        assert_eq!(test_decode(0x2abc), Chip8Opcode::CallSub(0xabc));
+
+        assert_eq!(test_decode(0xe19e), Chip8Opcode::SkipNextIfKeyDown(1));
+        assert_eq!(test_decode(0xe1a1), Chip8Opcode::SkipNextIfKeyUp(1));
     }
 }

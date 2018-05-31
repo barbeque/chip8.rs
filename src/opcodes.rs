@@ -2,7 +2,7 @@ pub type Chip8Address = u16; // Only the bottom 3 nibbles are used
 pub type Chip8Register = u8; // There's only 16 of them
 pub type Chip8Value = u8;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Chip8Opcode {
     /* 0NNN */ Call(Chip8Address),
     /* 00E0 */ DisplayClear,
