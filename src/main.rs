@@ -99,6 +99,9 @@ impl ComputerState {
         }
         else if top_nibble == 0x6 {
             // assign
+            let register = ((instruction & 0x0f00) >> 8) as u8;
+            let value = (instruction & 0x00ff) as u8;
+            return Chip8Opcode::SetRegister(register, value);
         }
         else if top_nibble == 0x7 {
             // increment w/o carry
@@ -283,6 +286,8 @@ mod computer_tests {
     fn basic_decodes_work() {
         assert_eq!(test_decode(0x1abc), Chip8Opcode::Goto(0xabc));
         assert_eq!(test_decode(0x2abc), Chip8Opcode::CallSub(0xabc));
+
+        assert_eq!(test_decode(0x6a14), Chip8Opcode::SetRegister(0xa, 0x14));
 
         assert_eq!(test_decode(0xe19e), Chip8Opcode::SkipNextIfKeyDown(1));
         assert_eq!(test_decode(0xe1a1), Chip8Opcode::SkipNextIfKeyUp(1));
