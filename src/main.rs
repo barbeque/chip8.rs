@@ -6,7 +6,6 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use std::path::PathBuf;
 use std::time::Duration;
-use rand::Rng;
 
 mod opcodes;
 use opcodes::*;
@@ -273,6 +272,9 @@ impl ComputerState {
             Chip8Opcode::Goto(address) => {
                 self.program_counter = address;
             },
+            Chip8Opcode::SetRegister(r1, value) => {
+                self.set_register(r1, value);
+            },
             Chip8Opcode::IncrementRegister(r1, step) => {
                 let value = self.get_register(r1);
                 self.set_register(r1, value.wrapping_add(step));
@@ -295,6 +297,10 @@ impl ComputerState {
             Chip8Opcode::SetDelayTimer(target_register) => {
                 let value = self.get_register(target_register);
                 self.delay_timer = value;
+            },
+            Chip8Opcode::ReadDelayTimer(destination_register) => {
+                let timer = self.delay_timer.clone();
+                self.set_register(destination_register, timer);
             },
             Chip8Opcode::SetSoundTimer(target_register) => {
                 let value = self.get_register(target_register);
@@ -521,5 +527,14 @@ mod computer_tests {
         // overflow should wrap, not crash
         assert_eq!(computer.get_register(0), 9);
         assert_eq!(computer.get_register(1), 10); // make sure reg y is not touched
+    }
+
+    #[test]
+    fn read_delay_timer_works() {
+        let mut computer = new_test_emulator();
+        computer.delay_timer = 100;
+
+        computer.execute(Chip8Opcode::ReadDelayTimer(0));
+        assert_eq!(computer.get_register(0), 100);
     }
 }
