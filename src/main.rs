@@ -496,8 +496,7 @@ mod computer_tests {
         computer.set_register(0, 250);
         computer.execute(Chip8Opcode::IncrementRegister(0, 10));
 
-        // (250 + 10) % 255 = 5
-        assert_eq!(computer.get_register(0), 5);
+        assert_eq!(computer.get_register(0), 4);
     }
 
     #[test]
@@ -519,8 +518,8 @@ mod computer_tests {
 
         computer.execute(Chip8Opcode::IncrementRegisterWithRegister(0, 1));
 
-        // (255 + 10) % 255 = 10
-        assert_eq!(computer.get_register(0), 10);
+        // overflow should wrap, not crash
+        assert_eq!(computer.get_register(0), 9);
         assert_eq!(computer.get_register(1), 10); // make sure reg y is not touched
     }
 }
