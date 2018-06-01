@@ -21,7 +21,7 @@ pub enum Chip8Opcode {
     /* 8XY4 */ IncrementRegisterWithRegister(Chip8Register, Chip8Register), // Vx += Vy
     /* 8XY5 */ DecrementRegisterWithRegister(Chip8Register, Chip8Register), // Vx -= Vy
     /* 8XY6 */ ShiftRegisterByRegister(Chip8Register, Chip8Register),
-    /* 8XY7 */ YRegisterMinusXRegister(Chip8Register, Chip8Register), // Vx = Vy - Vx
+    /* 8XY7 */ YRegisterMinusXRegister(/* X */ Chip8Register, /* Y */ Chip8Register), // Vx = Vy - Vx
     /* 8XYE */ LeftShiftRegisterByRegister(Chip8Register, Chip8Register),
     /* 9XY0 */ SkipNextIfRegistersNotEqual(Chip8Register, Chip8Register),
     /* ANNN */ SetIndexRegister(Chip8Address),

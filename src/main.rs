@@ -52,6 +52,7 @@ impl ComputerState {
             keys: [0u8; 16],
         }
 
+        // TODO: set up a panic handler that lets us know which IP is illegal
         // TODO: load ROM contents (font set)
     }
 
@@ -77,9 +78,21 @@ impl ComputerState {
 
     pub fn decode(&self, instruction: u16) -> Chip8Opcode {
         // Instructions are stored big-endian so we're good
+
+        // FIXME: This is way too long - can we write a macro that uses like the "0XYZ" notation?
         let top_nibble = (instruction & 0xf000) >> 12;
         if top_nibble == 0x0 {
-            // CALL
+            let top_byte = (instruction & 0xff00) >> 8;
+            if instruction == 0x00e0 {
+                return Chip8Opcode::DisplayClear;
+            }
+            else if instruction == 0x00ee {
+                return Chip8Opcode::ReturnFromSubroutine;
+            }
+            else {
+                // 0NNN - call
+                return Chip8Opcode::Call(instruction & 0xfff);
+            }
         }
         else if top_nibble == 0x1 {
             // 1NNN - jump
@@ -90,12 +103,26 @@ impl ComputerState {
             return Chip8Opcode::CallSub(instruction & 0xfff);
         }
         else if top_nibble == 0x3 {
+            // 3xnn - skip next if Vx equal NN
+            let register = ((instruction & 0x0f00) >> 8) as u8;
+            let data = instruction & 0x00ff;
+            return Chip8Opcode::SkipNextIfEqual(register, data);
         }
         else if top_nibble == 0x4 {
-
+            // 4xnn - skip next if Vx not equal to NN
+            let register = ((instruction & 0x0f00) >> 8) as u8;
+            let data = instruction & 0x00ff;
+            return Chip8Opcode::SkipNextIfNotEqual(register, data);
         }
         else if top_nibble == 0x5 {
-
+            // 5xy0 - skip next if Vx = Vy
+            if instruction & 0x000f == 0 {
+                let x_register = ((instruction & 0x0f00) >> 8) as u8;
+                let y_register = ((instruction & 0x00f0) >> 4) as u8;
+                return Chip8Opcode::SkipNextIfRegistersEqual(x_register, y_register);
+            } else {
+                panic!("Malformed skip next if register equal instruction {:x}", instruction);
+            }
         }
         else if top_nibble == 0x6 {
             // assign
@@ -105,12 +132,58 @@ impl ComputerState {
         }
         else if top_nibble == 0x7 {
             // increment w/o carry
+            let register = ((instruction & 0x0f00) >> 8) as u8;
+            let value = (instruction & 0x00ff) as u8;
+            return Chip8Opcode::IncrementRegister(register, value);
         }
         else if top_nibble == 0x8 {
-            let bottom_nibble = (instruction & 0x000f);
+            let x_register = ((instruction & 0x0f00) >> 8) as u8;
+            let y_register = ((instruction & 0x00f0) >> 4) as u8;
+
+            let mode = instruction & 0x000f;
+
+            if mode == 0 {
+                // 8xy0 - set register to register
+                return Chip8Opcode::SetRegisterToRegister(x_register, y_register);
+            }
+            else if mode == 1 {
+                return Chip8Opcode::RegisterRegisterOr(x_register, y_register);
+            }
+            else if mode == 2 {
+                return Chip8Opcode::RegisterRegisterAnd(x_register, y_register);
+            }
+            else if mode == 3 {
+                return Chip8Opcode::RegisterRegisterXor(x_register, y_register);
+            }
+            else if mode == 4 {
+                return Chip8Opcode::IncrementRegisterWithRegister(x_register, y_register);
+            }
+            else if mode == 5 {
+                return Chip8Opcode::DecrementRegisterWithRegister(x_register, y_register);
+            }
+            else if mode == 6 {
+                return Chip8Opcode::ShiftRegisterByRegister(x_register, y_register);
+            }
+            else if mode == 7 {
+                // y minus x - remember, still stored in x, y order
+                return Chip8Opcode::YRegisterMinusXRegister(x_register, y_register);
+            }
+            else if mode == 0xe {
+                return Chip8Opcode::LeftShiftRegisterByRegister(x_register, y_register);
+            }
+            else {
+                panic!("Malformed set register to register instruction {:x}", instruction);
+            }
         }
         else if top_nibble == 0x9 {
             // skip next if Vx != Vy
+            if instruction & 0x000f == 0 {
+                let x_register = ((instruction & 0x0f00) >> 8) as u8;
+                let y_register = ((instruction & 0x00f0) >> 4) as u8;
+                return Chip8Opcode::SkipNextIfRegistersNotEqual(x_register, y_register);
+            } else {
+                panic!("Malformed skip next if register not-equal instruction {:x}", instruction);
+            }
         }
         else if top_nibble == 0xa {
             // set index
@@ -284,10 +357,27 @@ mod computer_tests {
 
     #[test]
     fn basic_decodes_work() {
+        assert_eq!(test_decode(0x0abc), Chip8Opcode::Call(0xabc));
+        assert_eq!(test_decode(0x00e0), Chip8Opcode::DisplayClear);
+        assert_eq!(test_decode(0x00ee), Chip8Opcode::ReturnFromSubroutine);
         assert_eq!(test_decode(0x1abc), Chip8Opcode::Goto(0xabc));
         assert_eq!(test_decode(0x2abc), Chip8Opcode::CallSub(0xabc));
-
+        assert_eq!(test_decode(0x3abc), Chip8Opcode::SkipNextIfEqual(0xa, 0xbc));
+        assert_eq!(test_decode(0x4abc), Chip8Opcode::SkipNextIfNotEqual(0xa, 0xbc));
+        assert_eq!(test_decode(0x5ab0), Chip8Opcode::SkipNextIfRegistersEqual(0xa, 0xb));
         assert_eq!(test_decode(0x6a14), Chip8Opcode::SetRegister(0xa, 0x14));
+
+        assert_eq!(test_decode(0x8ab0), Chip8Opcode::SetRegisterToRegister(0xa, 0xb));
+        assert_eq!(test_decode(0x8ab1), Chip8Opcode::RegisterRegisterOr(0xa, 0xb));
+        assert_eq!(test_decode(0x8ab2), Chip8Opcode::RegisterRegisterAnd(0xa, 0xb));
+        assert_eq!(test_decode(0x8ab3), Chip8Opcode::RegisterRegisterXor(0xa, 0xb));
+        assert_eq!(test_decode(0x8ab4), Chip8Opcode::IncrementRegisterWithRegister(0xa, 0xb));
+        assert_eq!(test_decode(0x8ab5), Chip8Opcode::DecrementRegisterWithRegister(0xa, 0xb));
+        assert_eq!(test_decode(0x8ab6), Chip8Opcode::ShiftRegisterByRegister(0xa, 0xb));
+        assert_eq!(test_decode(0x8ab7), Chip8Opcode::YRegisterMinusXRegister(0xa, 0xb));
+        assert_eq!(test_decode(0x8abe), Chip8Opcode::LeftShiftRegisterByRegister(0xa, 0xb));
+
+        assert_eq!(test_decode(0x9ab0), Chip8Opcode::SkipNextIfRegistersNotEqual(0xa, 0xb));
 
         assert_eq!(test_decode(0xe19e), Chip8Opcode::SkipNextIfKeyDown(1));
         assert_eq!(test_decode(0xe1a1), Chip8Opcode::SkipNextIfKeyUp(1));
@@ -295,7 +385,25 @@ mod computer_tests {
 
     #[test]
     #[should_panic]
-    fn mangled_keydown_decode_works() {
+    fn mangled_keydown_decode_panics() {
         test_decode(0xe3ff); // 0xff is not a valid discriminating byte, so it should bail
+    }
+
+    #[test]
+    #[should_panic]
+    fn mangled_skip_next_if_registers_equal_panics() {
+        test_decode(0x5ab1); // must end in 0
+    }
+
+    #[test]
+    #[should_panic]
+    fn mangled_alu_panics() {
+        test_decode(0x8abf); // must end in 0..7, or E
+    }
+
+    #[test]
+    #[should_panic]
+    fn mangled_skip_next_if_registers_not_equal_panics() {
+        test_decode(0x9ab1); // must end in 0
     }
 }
