@@ -187,6 +187,7 @@ impl ComputerState {
         }
         else if top_nibble == 0xa {
             // set index
+            return Chip8Opcode::SetIndexRegister(instruction & 0xfff);
         }
         else if top_nibble == 0xb {
             // far jump
@@ -194,9 +195,17 @@ impl ComputerState {
         }
         else if top_nibble == 0xc {
             // random
+            let register = ((instruction & 0x0f00) >> 8) as Chip8Register;
+            let and_this = (instruction & 0x00ff) as u8;
+            return Chip8Opcode::Random(register, and_this);
         }
         else if top_nibble == 0xd {
             // draw sprite
+            // DXYN
+            let x_register = ((instruction & 0x0f00) >> 8) as Chip8Register;
+            let y_register = ((instruction & 0x00f0) >> 4) as Chip8Register;
+            let sprite = (instruction & 0x000f) as u8;
+            return Chip8Opcode::Draw(x_register, y_register, sprite)
         }
         else if top_nibble == 0xe {
             // key operations depending on bottom byte
@@ -215,8 +224,38 @@ impl ComputerState {
             }
         }
         else if top_nibble == 0xf {
-            // timer ops...
             let bottom_byte = instruction & 0xff;
+            let register = ((instruction & 0x0f00) >> 8) as Chip8Register;
+            if bottom_byte == 0x07 { // fx07
+                return Chip8Opcode::ReadDelayTimer(register);
+            }
+            else if bottom_byte == 0x0a { // fx0a
+                return Chip8Opcode::BlockOnKeyPress(register);
+            }
+            else if bottom_byte == 0x15 {
+                return Chip8Opcode::SetDelayTimer(register);
+            }
+            else if bottom_byte == 0x18 {
+                return Chip8Opcode::SetSoundTimer(register);
+            }
+            else if bottom_byte == 0x1e {
+                return Chip8Opcode::AddToIndexRegister(register);
+            }
+            else if bottom_byte == 0x29 {
+                return Chip8Opcode::UseSprite(register);
+            }
+            else if bottom_byte == 0x33 {
+                return Chip8Opcode::ReadRegisterAsBCD(register);
+            }
+            else if bottom_byte == 0x55 {
+                return Chip8Opcode::DumpRegisters(register);
+            }
+            else if bottom_byte == 0x65 { // fx65
+                return Chip8Opcode::FillRegisters(register);
+            }
+            else {
+                panic!("Malformed extended instruction {:x}", instruction);
+            }
         }
 
         panic!("Don't know how to decode {} yet.", instruction);
@@ -379,8 +418,22 @@ mod computer_tests {
 
         assert_eq!(test_decode(0x9ab0), Chip8Opcode::SkipNextIfRegistersNotEqual(0xa, 0xb));
 
+        assert_eq!(test_decode(0xabcd), Chip8Opcode::SetIndexRegister(0xbcd));
+        assert_eq!(test_decode(0xbabc), Chip8Opcode::JumpFromV0(0xabc));
+        assert_eq!(test_decode(0xcabc), Chip8Opcode::Random(0xa, 0xbc));
+        assert_eq!(test_decode(0xdabc), Chip8Opcode::Draw(0xa, 0xb, 0xc));
         assert_eq!(test_decode(0xe19e), Chip8Opcode::SkipNextIfKeyDown(1));
         assert_eq!(test_decode(0xe1a1), Chip8Opcode::SkipNextIfKeyUp(1));
+
+        assert_eq!(test_decode(0xfa07), Chip8Opcode::ReadDelayTimer(0xa));
+        assert_eq!(test_decode(0xfa0a), Chip8Opcode::BlockOnKeyPress(0xa));
+        assert_eq!(test_decode(0xfa15), Chip8Opcode::SetDelayTimer(0xa));
+        assert_eq!(test_decode(0xfa18), Chip8Opcode::SetSoundTimer(0xa));
+        assert_eq!(test_decode(0xfa1e), Chip8Opcode::AddToIndexRegister(0xa));
+        assert_eq!(test_decode(0xfa29), Chip8Opcode::UseSprite(0xa));
+        assert_eq!(test_decode(0xfa33), Chip8Opcode::ReadRegisterAsBCD(0xa));
+        assert_eq!(test_decode(0xfa55), Chip8Opcode::DumpRegisters(0xa));
+        assert_eq!(test_decode(0xfa65), Chip8Opcode::FillRegisters(0xa));
     }
 
     #[test]
@@ -405,5 +458,11 @@ mod computer_tests {
     #[should_panic]
     fn mangled_skip_next_if_registers_not_equal_panics() {
         test_decode(0x9ab1); // must end in 0
+    }
+
+    #[test]
+    #[should_panic]
+    fn mangled_extended_op_panics() {
+        test_decode(0xfabf); // must end in 07, 09, etc. not BF
     }
 }
