@@ -299,7 +299,7 @@ impl ComputerState {
                 self.delay_timer = value;
             },
             Chip8Opcode::ReadDelayTimer(destination_register) => {
-                let timer = self.delay_timer.clone();
+                let timer = self.delay_timer;
                 self.set_register(destination_register, timer);
             },
             Chip8Opcode::SetSoundTimer(target_register) => {
@@ -536,5 +536,14 @@ mod computer_tests {
 
         computer.execute(Chip8Opcode::ReadDelayTimer(0));
         assert_eq!(computer.get_register(0), 100);
+        assert_eq!(computer.delay_timer, 100); // make sure the value is preserved
+    }
+
+    #[test]
+    fn set_delay_timer_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 123);
+        computer.execute(Chip8Opcode::SetDelayTimer(0));
+        assert_eq!(computer.delay_timer, 123);
     }
 }
