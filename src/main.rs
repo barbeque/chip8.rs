@@ -545,5 +545,15 @@ mod computer_tests {
         computer.set_register(0, 123);
         computer.execute(Chip8Opcode::SetDelayTimer(0));
         assert_eq!(computer.delay_timer, 123);
+        assert_eq!(computer.get_register(0), 123);
+    }
+
+    #[test]
+    fn set_sound_timer_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 124);
+        computer.execute(Chip8Opcode::SetSoundTimer(0));
+        assert_eq!(computer.sound_timer, 124);
+        assert_eq!(computer.get_register(0), 124)
     }
 }
