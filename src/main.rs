@@ -483,7 +483,7 @@ mod computer_tests {
     // Execute tests
     #[test]
     fn regular_increment_works() {
-        let computer = new_test_emulator();
+        let mut computer = new_test_emulator();
         computer.set_register(0, 150);
         computer.execute(Chip8Opcode::IncrementRegister(0, 10));
 
@@ -492,7 +492,7 @@ mod computer_tests {
 
     #[test]
     fn regular_increment_wraps_overflow() {
-        let computer = new_test_emulator();
+        let mut computer = new_test_emulator();
         computer.set_register(0, 250);
         computer.execute(Chip8Opcode::IncrementRegister(0, 10));
 
@@ -502,7 +502,7 @@ mod computer_tests {
 
     #[test]
     fn reg_reg_addition_works() {
-        let computer = new_test_emulator();
+        let mut computer = new_test_emulator();
         computer.set_register(0, 25);
         computer.set_register(1, 10);
         computer.execute(Chip8Opcode::IncrementRegisterWithRegister(0, 1));
@@ -513,7 +513,7 @@ mod computer_tests {
 
     #[test]
     fn reg_reg_addition_wraps_overflow() {
-        let computer = new_test_emulator();
+        let mut computer = new_test_emulator();
         computer.set_register(0, 255);
         computer.set_register(1, 10);
 
