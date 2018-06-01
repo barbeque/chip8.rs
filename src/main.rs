@@ -279,6 +279,21 @@ impl ComputerState {
                 let value = self.get_register(r1);
                 self.set_register(r1, value.wrapping_add(step));
             },
+            Chip8Opcode::RegisterRegisterOr(r1, r2) => {
+                let v1 = self.get_register(r1);
+                let v2 = self.get_register(r2);
+                self.set_register(r1, v1 | v2);
+            },
+            Chip8Opcode::RegisterRegisterAnd(r1, r2) => {
+                let v1 = self.get_register(r1);
+                let v2 = self.get_register(r2);
+                self.set_register(r1, v1 & v2);
+            },
+            Chip8Opcode::RegisterRegisterXor(r1, r2) => {
+                let v1 = self.get_register(r1);
+                let v2 = self.get_register(r2);
+                self.set_register(r1, v1 ^ v2);
+            },
             Chip8Opcode::IncrementRegisterWithRegister(r1, r2) => {
                 let value = self.get_register(r1);
                 let step = self.get_register(r2);
@@ -555,5 +570,35 @@ mod computer_tests {
         computer.execute(Chip8Opcode::SetSoundTimer(0));
         assert_eq!(computer.sound_timer, 124);
         assert_eq!(computer.get_register(0), 124)
+    }
+
+    #[test]
+    fn register_register_or_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 0xa0);
+        computer.set_register(1, 0x0f);
+        computer.execute(Chip8Opcode::RegisterRegisterOr(0, 1));
+        assert_eq!(computer.get_register(0), 0xaf);
+        assert_eq!(computer.get_register(1), 0x0f); // make sure the y-register is not touched
+    }
+
+    #[test]
+    fn register_register_and_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 0xaf);
+        computer.set_register(1, 0x0f);
+        computer.execute(Chip8Opcode::RegisterRegisterAnd(0, 1));
+        assert_eq!(computer.get_register(0), 0x0f);
+        assert_eq!(computer.get_register(1), 0x0f); // make sure the y-register is not touched
+    }
+
+    #[test]
+    fn register_register_xor_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 0xff);
+        computer.set_register(1, 0x0f);
+        computer.execute(Chip8Opcode::RegisterRegisterXor(0, 1));
+        assert_eq!(computer.get_register(0), 0xf0);
+        assert_eq!(computer.get_register(1), 0x0f); // make sure the y-register is not touched    
     }
 }
