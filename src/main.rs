@@ -425,6 +425,7 @@ mod computer_tests {
         assert_eq!(test_decode(0xe19e), Chip8Opcode::SkipNextIfKeyDown(1));
         assert_eq!(test_decode(0xe1a1), Chip8Opcode::SkipNextIfKeyUp(1));
 
+        // Extended opcodes
         assert_eq!(test_decode(0xfa07), Chip8Opcode::ReadDelayTimer(0xa));
         assert_eq!(test_decode(0xfa0a), Chip8Opcode::BlockOnKeyPress(0xa));
         assert_eq!(test_decode(0xfa15), Chip8Opcode::SetDelayTimer(0xa));
