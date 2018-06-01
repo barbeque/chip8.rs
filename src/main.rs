@@ -82,7 +82,6 @@ impl ComputerState {
         // FIXME: This is way too long - can we write a macro that uses like the "0XYZ" notation?
         let top_nibble = (instruction & 0xf000) >> 12;
         if top_nibble == 0x0 {
-            let top_byte = (instruction & 0xff00) >> 8;
             if instruction == 0x00e0 {
                 return Chip8Opcode::DisplayClear;
             }
