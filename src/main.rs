@@ -273,6 +273,20 @@ impl ComputerState {
             Chip8Opcode::Goto(address) => {
                 self.program_counter = address;
             },
+            Chip8Opcode::IncrementRegister(r1, step) => {
+                let value = self.get_register(r1);
+                self.set_register(r1, value.wrapping_add(step));
+            },
+            Chip8Opcode::IncrementRegisterWithRegister(r1, r2) => {
+                let value = self.get_register(r1);
+                let step = self.get_register(r2);
+
+                self.set_register(r1, value.wrapping_add(step));
+            },
+            Chip8Opcode::SetRegisterToRegister(r1, r2) => {
+                let new_value = self.get_register(r2);
+                self.set_register(r1, new_value);
+            },
             // TODO: Call Sub... lots more
             Chip8Opcode::Random(target_register, value) => {
                 self.set_register(target_register, rand::random::<u8>() & value);
@@ -464,5 +478,49 @@ mod computer_tests {
     #[should_panic]
     fn mangled_extended_op_panics() {
         test_decode(0xfabf); // must end in 07, 09, etc. not BF
+    }
+
+    // Execute tests
+    #[test]
+    fn regular_increment_works() {
+        let computer = new_test_emulator();
+        computer.set_register(0, 150);
+        computer.execute(Chip8Opcode::IncrementRegister(0, 10));
+
+        assert_eq!(computer.get_register(0), 160);
+    }
+
+    #[test]
+    fn regular_increment_wraps_overflow() {
+        let computer = new_test_emulator();
+        computer.set_register(0, 250);
+        computer.execute(Chip8Opcode::IncrementRegister(0, 10));
+
+        // (250 + 10) % 255 = 5
+        assert_eq!(computer.get_register(0), 5);
+    }
+
+    #[test]
+    fn reg_reg_addition_works() {
+        let computer = new_test_emulator();
+        computer.set_register(0, 25);
+        computer.set_register(1, 10);
+        computer.execute(Chip8Opcode::IncrementRegisterWithRegister(0, 1));
+
+        assert_eq!(computer.get_register(0), 35);
+        assert_eq!(computer.get_register(1), 10);
+    }
+
+    #[test]
+    fn reg_reg_addition_wraps_overflow() {
+        let computer = new_test_emulator();
+        computer.set_register(0, 255);
+        computer.set_register(1, 10);
+
+        computer.execute(Chip8Opcode::IncrementRegisterWithRegister(0, 1));
+
+        // (255 + 10) % 255 = 10
+        assert_eq!(computer.get_register(0), 10);
+        assert_eq!(computer.get_register(1), 10); // make sure reg y is not touched
     }
 }
