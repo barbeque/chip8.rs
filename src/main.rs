@@ -300,6 +300,11 @@ impl ComputerState {
 
                 self.set_register(r1, value.wrapping_add(step));
             },
+            Chip8Opcode::DecrementRegisterWithRegister(r1, r2) => {
+                let value = self.get_register(r1);
+                let step = self.get_register(r2);
+                self.set_register(r1, value.wrapping_sub(step));
+            },
             Chip8Opcode::SetRegisterToRegister(r1, r2) => {
                 let new_value = self.get_register(r2);
                 self.set_register(r1, new_value);
@@ -545,6 +550,28 @@ mod computer_tests {
     }
 
     #[test]
+    fn reg_reg_decrement_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 17);
+        computer.set_register(1, 2);
+        computer.execute(Chip8Opcode::DecrementRegisterWithRegister(0, 1));
+
+        assert_eq!(computer.get_register(0), 15);
+        assert_eq!(computer.get_register(1), 2);
+    }
+
+    #[test]
+    fn reg_reg_decrement_wraps_underflow() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 0);
+        computer.set_register(1, 2);
+        computer.execute(Chip8Opcode::DecrementRegisterWithRegister(0, 1));
+
+        assert_eq!(computer.get_register(0), 254);
+        assert_eq!(computer.get_register(1), 2);
+    }
+
+    #[test]
     fn read_delay_timer_works() {
         let mut computer = new_test_emulator();
         computer.delay_timer = 100;
@@ -599,6 +626,6 @@ mod computer_tests {
         computer.set_register(1, 0x0f);
         computer.execute(Chip8Opcode::RegisterRegisterXor(0, 1));
         assert_eq!(computer.get_register(0), 0xf0);
-        assert_eq!(computer.get_register(1), 0x0f); // make sure the y-register is not touched    
+        assert_eq!(computer.get_register(1), 0x0f); // make sure the y-register is not touched
     }
 }
