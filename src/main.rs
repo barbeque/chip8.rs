@@ -329,19 +329,47 @@ impl ComputerState {
                 let step = self.get_register(r2);
 
                 self.set_register(r1, value.wrapping_add(step));
+
+                // TODO: Set VF to 1 when there's a carry, 0 else
             },
             Chip8Opcode::DecrementRegisterWithRegister(r1, r2) => {
                 let value = self.get_register(r1);
                 let step = self.get_register(r2);
                 self.set_register(r1, value.wrapping_sub(step));
+
+                // TODO: Set VF to 0 when there's a borrow, 1 else
             },
-            // TODO: shifts...
+            Chip8Opcode::ShiftRegisterByRegister(r1, r2) => {
+                let v2 = self.get_register(r2);
+                let value = v2 >> 1;
+
+                // TODO: Set VF to the LSb of v2 before shift
+
+                self.set_register(r1, value);
+            },
+            Chip8Opcode::YRegisterMinusXRegister(x, y) => {
+                let v1 = self.get_register(x);
+                let v2 = self.get_register(y);
+
+                self.set_register(x, v2.wrapping_sub(v1));
+
+                // TODO: Set VF to 0 when borrow, 1 else
+            },
             Chip8Opcode::SkipNextIfRegistersNotEqual(r1, r2) => {
                 let v1 = self.get_register(r1);
                 let v2 = self.get_register(r2);
                 if v1 != v2 {
                     self.advance_pc();
                 }
+            },
+            Chip8Opcode::LeftShiftRegisterByRegister(r1, r2) => {
+                let v2 = self.get_register(r2);
+                let value = v2 << 1;
+
+                self.set_register(r1, value);
+                self.set_register(r2, value);
+
+                // TODO: set VF to the MSb of v2 before the shift
             },
             // TODO: Call Sub... lots more
             Chip8Opcode::Random(target_register, value) => {
@@ -657,6 +685,11 @@ mod computer_tests {
     }
 
     #[test]
+    fn reg_reg_addition_sets_carry_flag() {
+        // F should be set to 1 when carried, 0 else
+    }
+
+    #[test]
     fn reg_reg_decrement_works() {
         let mut computer = new_test_emulator();
         computer.set_register(0, 17);
@@ -676,6 +709,59 @@ mod computer_tests {
 
         assert_eq!(computer.get_register(0), 254);
         assert_eq!(computer.get_register(1), 2);
+    }
+
+    #[test]
+    fn reg_reg_decrement_sets_borrow_register() {
+        // TODO: a borrow should set Vf to 0, else 1
+    }
+
+    #[test]
+    fn reg_reg_shift_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 8);
+        computer.set_register(1, 32);
+
+        computer.execute(Chip8Opcode::ShiftRegisterByRegister(0, 1));
+
+        assert_eq!(computer.get_register(0), 32 >> 1);
+        assert_eq!(computer.get_register(1), 32); // remains unchanged
+    }
+
+    #[test]
+    fn reg_reg_shift_sets_f_register() {
+        // TODO: the F-register is set to the LSb of Vy before shift
+    }
+
+    #[test]
+    fn reg_reg_left_shift_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(1, 60);
+
+        computer.execute(Chip8Opcode::LeftShiftRegisterByRegister(0, 1));
+        assert_eq!(computer.get_register(0), 60 << 1);
+        assert_eq!(computer.get_register(1), 60 << 1); // should be changed too
+    }
+
+    #[test]
+    fn reg_reg_left_shift_sets_f_register() {
+        // TODO: the F-register is set to the MSb of Vy before the shift
+    }
+
+    #[test]
+    fn y_minus_x_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 35);
+        computer.set_register(1, 100);
+
+        computer.execute(Chip8Opcode::YRegisterMinusXRegister(0, 1));
+
+        assert_eq!(computer.get_register(0), 65); // 100 - 35
+    }
+
+    #[test]
+    fn y_minus_x_sets_f_register() {
+        // TODO: sets Vf to 0 when there's a borrow, and 1 when there isn't.
     }
 
     #[test]
