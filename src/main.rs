@@ -279,6 +279,10 @@ impl ComputerState {
                 let value = self.get_register(r1);
                 self.set_register(r1, value.wrapping_add(step));
             },
+            Chip8Opcode::SetRegisterToRegister(r1, r2) => {
+                let new_value = self.get_register(r2);
+                self.set_register(r1, new_value);
+            },
             Chip8Opcode::RegisterRegisterOr(r1, r2) => {
                 let v1 = self.get_register(r1);
                 let v2 = self.get_register(r2);
@@ -304,10 +308,6 @@ impl ComputerState {
                 let value = self.get_register(r1);
                 let step = self.get_register(r2);
                 self.set_register(r1, value.wrapping_sub(step));
-            },
-            Chip8Opcode::SetRegisterToRegister(r1, r2) => {
-                let new_value = self.get_register(r2);
-                self.set_register(r1, new_value);
             },
             // TODO: Call Sub... lots more
             Chip8Opcode::Random(target_register, value) => {
