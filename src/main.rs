@@ -55,6 +55,11 @@ impl ComputerState {
         // TODO: load ROM contents (font set)
     }
 
+    fn advance_pc(&mut self) {
+        // advance the instruction pointer
+        self.program_counter += 2; // 2 bytes (16 bit instructions)
+    }
+
     pub fn load_program(&mut self, path: &str) {
         let relative_path = PathBuf::from(path);
         let mut absolute_path = std::env::current_dir().unwrap();
@@ -103,13 +108,13 @@ impl ComputerState {
         else if top_nibble == 0x3 {
             // 3xnn - skip next if Vx equal NN
             let register = ((instruction & 0x0f00) >> 8) as u8;
-            let data = instruction & 0x00ff;
+            let data = (instruction & 0x00ff) as u8;
             return Chip8Opcode::SkipNextIfEqual(register, data);
         }
         else if top_nibble == 0x4 {
             // 4xnn - skip next if Vx not equal to NN
             let register = ((instruction & 0x0f00) >> 8) as u8;
-            let data = instruction & 0x00ff;
+            let data = (instruction & 0x00ff) as u8;
             return Chip8Opcode::SkipNextIfNotEqual(register, data);
         }
         else if top_nibble == 0x5 {
@@ -272,6 +277,27 @@ impl ComputerState {
             Chip8Opcode::Goto(address) => {
                 self.program_counter = address;
             },
+            Chip8Opcode::SkipNextIfEqual(r1, value) => {
+                let v1 = self.get_register(r1);
+                if v1 == value {
+                    // jump ahead one instruction,
+                    // fetch will jump automatically
+                    self.advance_pc();
+                }
+            }
+            Chip8Opcode::SkipNextIfNotEqual(r1, value) => {
+                let v1 = self.get_register(r1);
+                if v1 != value {
+                    self.advance_pc();
+                }
+            },
+            Chip8Opcode::SkipNextIfRegistersEqual(r1, r2) => {
+                let v1 = self.get_register(r1);
+                let v2 = self.get_register(r2);
+                if v1 == v2 {
+                    self.advance_pc();
+                }
+            },
             Chip8Opcode::SetRegister(r1, value) => {
                 self.set_register(r1, value);
             },
@@ -308,6 +334,14 @@ impl ComputerState {
                 let value = self.get_register(r1);
                 let step = self.get_register(r2);
                 self.set_register(r1, value.wrapping_sub(step));
+            },
+            // TODO: shifts...
+            Chip8Opcode::SkipNextIfRegistersNotEqual(r1, r2) => {
+                let v1 = self.get_register(r1);
+                let v2 = self.get_register(r2);
+                if v1 != v2 {
+                    self.advance_pc();
+                }
             },
             // TODO: Call Sub... lots more
             Chip8Opcode::Random(target_register, value) => {
@@ -506,7 +540,80 @@ mod computer_tests {
         test_decode(0xfabf); // must end in 07, 09, etc. not BF
     }
 
-    // Execute tests
+    // Execute tests -------
+
+    #[test]
+    fn skip_next_if_equal_works() {
+        let mut computer = new_test_emulator();
+        let original_pc = computer.program_counter;
+
+        computer.set_register(0, 66);
+        computer.execute(Chip8Opcode::SkipNextIfEqual(0, 67));
+
+        // pc should not change if values not equal
+        assert_eq!(computer.program_counter, original_pc);
+
+        computer.execute(Chip8Opcode::SkipNextIfEqual(0, 66));
+
+        // pc should advance past the next instruction if equal
+        assert_eq!(computer.program_counter, original_pc + 2);
+    }
+
+    #[test]
+    fn skip_next_if_not_equal_works() {
+        let mut computer = new_test_emulator();
+        let original_pc = computer.program_counter;
+
+        computer.set_register(0, 66);
+        computer.execute(Chip8Opcode::SkipNextIfNotEqual(0, 66));
+
+        // pc should not change if values are equal
+        assert_eq!(computer.program_counter, original_pc);
+
+        computer.execute(Chip8Opcode::SkipNextIfNotEqual(0, 67));
+
+        // skip over next instruction if values not equal
+        assert_eq!(computer.program_counter, original_pc + 2);
+    }
+
+    #[test]
+    fn skip_next_if_registers_equal_works() {
+        let mut computer = new_test_emulator();
+        let original_pc = computer.program_counter;
+
+        computer.set_register(0, 66);
+        computer.set_register(1, 99);
+        computer.set_register(2, 66);
+
+        // 66 != 99
+        computer.execute(Chip8Opcode::SkipNextIfRegistersEqual(0, 1));
+        assert_eq!(computer.program_counter, original_pc);
+
+        // 66 == 66
+        computer.execute(Chip8Opcode::SkipNextIfRegistersEqual(0, 2));
+        assert_eq!(computer.program_counter, original_pc + 2);
+    }
+
+    #[test]
+    fn skip_next_if_registers_not_equal_works() {
+        let mut computer = new_test_emulator();
+        let original_pc = computer.program_counter;
+
+        computer.set_register(0, 66);
+        computer.set_register(1, 99);
+        computer.set_register(2, 66);
+
+        computer.execute(Chip8Opcode::SkipNextIfRegistersNotEqual(0, 2));
+
+        // 66 == 66
+        assert_eq!(computer.program_counter, original_pc);
+
+        computer.execute(Chip8Opcode::SkipNextIfRegistersNotEqual(0, 1));
+
+        // 66 != 99
+        assert_eq!(computer.program_counter, original_pc + 2);
+    }
+
     #[test]
     fn regular_increment_works() {
         let mut computer = new_test_emulator();
