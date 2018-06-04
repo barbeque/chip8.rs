@@ -15,7 +15,7 @@ struct ComputerState {
     opcode: u16,
     // 4K main memory
     memory: [u8; 4096],
-    // General purpose registers V0..VE
+    // General purpose registers V0..VE + special, VF
     registers: [u8; 16],
     // Index register
     index: u16,
@@ -341,11 +341,13 @@ impl ComputerState {
             },
             Chip8Opcode::ShiftRegisterByRegister(r1, r2) => {
                 let v2 = self.get_register(r2);
+                let lsb = v2 & 0x01;
                 let value = v2 >> 1;
 
-                // TODO: Set VF to the LSb of v2 before shift
-
                 self.set_register(r1, value);
+
+                // Set VF to the LSb of v2 before shift
+                self.set_register(0xf, lsb);
             },
             Chip8Opcode::YRegisterMinusXRegister(x, y) => {
                 let v1 = self.get_register(x);
@@ -364,12 +366,14 @@ impl ComputerState {
             },
             Chip8Opcode::LeftShiftRegisterByRegister(r1, r2) => {
                 let v2 = self.get_register(r2);
+                let msb = (v2 & 0x80) >> 7;
                 let value = v2 << 1;
 
                 self.set_register(r1, value);
                 self.set_register(r2, value);
 
-                // TODO: set VF to the MSb of v2 before the shift
+                // Set VF to the most significant bit of v2 before the shift
+                self.set_register(0xf, msb);
             },
             // TODO: Call Sub... lots more
             Chip8Opcode::Random(target_register, value) => {
@@ -730,7 +734,22 @@ mod computer_tests {
 
     #[test]
     fn reg_reg_shift_sets_f_register() {
-        // TODO: the F-register is set to the LSb of Vy before shift
+        let mut computer = new_test_emulator();
+        computer.set_register(1, 0xff);
+        computer.execute(Chip8Opcode::ShiftRegisterByRegister(0, 1));
+        assert_eq!(computer.get_register(0xf), 1); // least significant bit of 0xff is 1
+
+        computer.set_register(1, 0x01);
+        computer.execute(Chip8Opcode::ShiftRegisterByRegister(0, 1));
+        assert_eq!(computer.get_register(0xf), 1); // least significant bit of 0x01 is also 1
+
+        computer.set_register(1, 0x00);
+        computer.execute(Chip8Opcode::ShiftRegisterByRegister(0, 1));
+        assert_eq!(computer.get_register(0xf), 0); // least significant bit of 0x00 is 0
+
+        computer.set_register(1, 0xf0);
+        computer.execute(Chip8Opcode::ShiftRegisterByRegister(0, 1));
+        assert_eq!(computer.get_register(0xf), 0); // least significant bit of 0xf0 is also 1
     }
 
     #[test]
@@ -745,7 +764,14 @@ mod computer_tests {
 
     #[test]
     fn reg_reg_left_shift_sets_f_register() {
-        // TODO: the F-register is set to the MSb of Vy before the shift
+        let mut computer = new_test_emulator();
+        computer.set_register(1, 0xff);
+        computer.execute(Chip8Opcode::LeftShiftRegisterByRegister(0, 1));
+        assert_eq!(computer.get_register(0xf), 1); // most significant bit was non-zero
+
+        computer.set_register(1, 0x0f);
+        computer.execute(Chip8Opcode::LeftShiftRegisterByRegister(0, 1));
+        assert_eq!(computer.get_register(0xf), 0); // most significant bit of 0x0f is zero
     }
 
     #[test]
