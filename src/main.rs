@@ -6,13 +6,13 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use std::path::PathBuf;
 use std::time::Duration;
+use std::fs::File;
+use std::io::prelude::*;
 
 mod opcodes;
 use opcodes::*;
 
 struct ComputerState {
-    // The current opcode being decoded
-    opcode: u16,
     // 4K main memory
     memory: [u8; 4096],
     // General purpose registers V0..VE + special, VF
@@ -38,7 +38,6 @@ struct ComputerState {
 impl ComputerState {
     pub fn new() -> ComputerState {
         ComputerState {
-            opcode: 0,
             memory: [0u8; 4096],
             registers: [0u8; 16],
             index: 0,
@@ -77,7 +76,29 @@ impl ComputerState {
 
         // Load the program into RAM
         let target_path = target.to_str().unwrap();
-        println!("Loading CHIP-8 program '{}'", target_path)
+        println!("Loading CHIP-8 program '{}'", target_path);
+
+        let mut file = File::open(target_path).unwrap();
+        let mut buf = Vec::<u8>::new();
+
+        match file.read_to_end(&mut buf) {
+            Ok(length) => {
+                println!("Loaded {} byte(s)", length);
+
+                if length > self.memory.len() - 0x200 {
+                    println!("Warning: too big for main memory. Will probably crash.");
+                }
+
+                // Start loading at 0x200
+                for (i, b) in buf.iter().enumerate() {
+                    self.memory[i + 0x200] = *b;
+                }
+            },
+            Err(e) => {
+                println!("Error loading file: {}", e);
+                std::process::exit(1);
+            }
+        }
     }
 
     pub fn decode(&self, instruction: u16) -> Chip8Opcode {
@@ -436,8 +457,10 @@ impl ComputerState {
 
         // decode
         let decoded = self.decode(instruction);
+
         // execute
         self.execute(decoded);
+
         // update timers (60Hz - need timing)
     }
 
