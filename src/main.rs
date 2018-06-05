@@ -330,14 +330,26 @@ impl ComputerState {
 
                 self.set_register(r1, value.wrapping_add(step));
 
-                // TODO: Set VF to 1 when there's a carry, 0 else
+                if (value as u16 + step as u16) > 255 {
+                    // carry
+                    self.set_register(0xf, 1);
+                }
+                else {
+                    self.set_register(0xf, 0);
+                }
             },
             Chip8Opcode::DecrementRegisterWithRegister(r1, r2) => {
                 let value = self.get_register(r1);
                 let step = self.get_register(r2);
                 self.set_register(r1, value.wrapping_sub(step));
 
-                // TODO: Set VF to 0 when there's a borrow, 1 else
+                if value > step {
+                    // NOT borrow
+                    self.set_register(0xf, 1);
+                }
+                else {
+                    self.set_register(0xf, 0);
+                }
             },
             Chip8Opcode::ShiftRegisterByRegister(r1, r2) => {
                 let v2 = self.get_register(r2);
@@ -355,7 +367,13 @@ impl ComputerState {
 
                 self.set_register(x, v2.wrapping_sub(v1));
 
-                // TODO: Set VF to 0 when borrow, 1 else
+                if v2 > v1 {
+                    // NOT borrow
+                    self.set_register(0xf, 1);
+                }
+                else {
+                    self.set_register(0xf, 0);
+                }
             },
             Chip8Opcode::SkipNextIfRegistersNotEqual(r1, r2) => {
                 let v1 = self.get_register(r1);
@@ -690,7 +708,16 @@ mod computer_tests {
 
     #[test]
     fn reg_reg_addition_sets_carry_flag() {
-        // F should be set to 1 when carried, 0 else
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 200);
+        computer.set_register(1, 10);
+
+        computer.execute(Chip8Opcode::IncrementRegisterWithRegister(0, 1));
+        assert_eq!(computer.get_register(0xf), 0); // carry flag must not be set for non-overflow
+
+        computer.set_register(2, 255);
+        computer.execute(Chip8Opcode::IncrementRegisterWithRegister(2, 1));
+        assert_eq!(computer.get_register(0xf), 1); // did overflow, so carry flag must be set
     }
 
     #[test]
@@ -717,7 +744,15 @@ mod computer_tests {
 
     #[test]
     fn reg_reg_decrement_sets_borrow_register() {
-        // TODO: a borrow should set Vf to 0, else 1
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 100);
+        computer.set_register(1, 1);
+        computer.execute(Chip8Opcode::DecrementRegisterWithRegister(0, 1));
+        assert_eq!(computer.get_register(0xf), 1); // NOT borrowed
+
+        computer.set_register(2, 150);
+        computer.execute(Chip8Opcode::DecrementRegisterWithRegister(0, 2));
+        assert_eq!(computer.get_register(0xf), 0); // did borrow
     }
 
     #[test]
@@ -787,7 +822,18 @@ mod computer_tests {
 
     #[test]
     fn y_minus_x_sets_f_register() {
-        // TODO: sets Vf to 0 when there's a borrow, and 1 when there isn't.
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 150);
+        computer.set_register(1, 200);
+        computer.execute(Chip8Opcode::YRegisterMinusXRegister(0, 1));
+        assert_eq!(computer.get_register(0), 50);
+        assert_eq!(computer.get_register(0xf), 1); // NOT borrowed
+
+        // now underflow
+        computer.set_register(0, 25);
+        computer.set_register(1, 15);
+        computer.execute(Chip8Opcode::YRegisterMinusXRegister(0, 1));
+        assert_eq!(computer.get_register(0xf), 0); // borrowed
     }
 
     #[test]
