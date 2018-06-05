@@ -398,6 +398,10 @@ impl ComputerState {
                 self.set_register(target_register, rand::random::<u8>() & value);
             },
             // TODO: Draw... lots more
+            Chip8Opcode::JumpFromV0(offset) => {
+                let base = self.get_register(0) as u16; // v0
+                self.program_counter = offset + base; // TODO: make sure that we don't skip the first instruction here
+            },
             Chip8Opcode::SetDelayTimer(target_register) => {
                 let value = self.get_register(target_register);
                 self.delay_timer = value;
@@ -844,6 +848,21 @@ mod computer_tests {
         computer.execute(Chip8Opcode::ReadDelayTimer(0));
         assert_eq!(computer.get_register(0), 100);
         assert_eq!(computer.delay_timer, 100); // make sure the value is preserved
+    }
+
+    #[test]
+    fn jump_from_v0_works() {
+        /*
+            FIXME: we need to worry about how the fetch/decode step works,
+            since other opcode handling takes the assumption that pc auto-steps.
+
+            if pc auto-steps after this we'll end up at v0 + NNN + 2 which is NOT
+            what we want.
+        */
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 10);
+        computer.execute(Chip8Opcode::JumpFromV0(150));
+        assert_eq!(computer.program_counter, 160); // should this be checked for opcode alignment?
     }
 
     #[test]
