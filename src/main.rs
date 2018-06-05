@@ -430,6 +430,10 @@ impl ComputerState {
         // fetch
         let pc: usize = self.program_counter as usize;
         let instruction = (self.memory[pc] as u16) << 8 | (self.memory[pc + 1] as u16);
+
+        // advance pointer to next instruction (execute may change address)
+        self.program_counter += 2;
+
         // decode
         let decoded = self.decode(instruction);
         // execute
@@ -852,13 +856,6 @@ mod computer_tests {
 
     #[test]
     fn jump_from_v0_works() {
-        /*
-            FIXME: we need to worry about how the fetch/decode step works,
-            since other opcode handling takes the assumption that pc auto-steps.
-
-            if pc auto-steps after this we'll end up at v0 + NNN + 2 which is NOT
-            what we want.
-        */
         let mut computer = new_test_emulator();
         computer.set_register(0, 10);
         computer.execute(Chip8Opcode::JumpFromV0(150));
