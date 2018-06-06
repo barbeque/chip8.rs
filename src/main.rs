@@ -459,12 +459,15 @@ impl ComputerState {
             Chip8Opcode::Random(target_register, value) => {
                 self.set_register(target_register, rand::random::<u8>() & value);
             },
-            Chip8Opcode::Draw(vx, vy, height) => {
+            Chip8Opcode::Draw(x_reg, y_reg, height) => {
                 // sprites are 8 pixels wide
                 // each row is bit-coded from I
                 // VF=1 if any pixels go from set -> unset
                 // else VF=0
                 self.set_register(0xf, 0);
+
+                let vx = self.get_register(x_reg);
+                let vy = self.get_register(y_reg);
 
                 for row in 0..height {
                     let source = self.memory[(self.index + row as u16) as usize];
