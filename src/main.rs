@@ -587,6 +587,37 @@ impl ComputerState {
     }
 }
 
+fn draw_screen<T : sdl2::render::RenderTarget>(chip8: &ComputerState, canvas: &mut sdl2::render::Canvas<T>) {
+    // FIXME: fix this so that 800x600 is no longer hardcoded
+    const K_WIDTH : u32 = 800;
+    const K_HEIGHT : u32 = 600;
+
+    let pixel_size = std::cmp::min(K_WIDTH / 64, K_HEIGHT / 32);
+
+    // Centre the screen
+    let start_x = (K_WIDTH - (64 * pixel_size)) / 2;
+    let start_y = (K_HEIGHT - (32 * pixel_size)) / 2;
+
+    // FIXME: There is probably a faster way to do this. DrawRects?
+    for y in 0..32 {
+        for x in 0..64 {
+            let val = chip8.gfx[y * 64 + x];
+            let rect = sdl2::rect::Rect::new(
+                (start_x + (x as u32 * pixel_size)) as i32,
+                (start_y + (y as u32 * pixel_size)) as i32,
+                pixel_size, pixel_size);
+
+            if val > 0 {
+                canvas.set_draw_color(Color::RGB(255, 140, 0)); // dark orange
+            } else {
+                canvas.set_draw_color(Color::RGB(0, 0, 128)); // navy blue
+            }
+
+            canvas.draw_rect(rect).unwrap();
+        }
+    }
+}
+
 pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -616,9 +647,14 @@ pub fn main() {
         canvas.clear();
 
         chip8.step();
+
+        // draw contents of screen memory
+        draw_screen(&chip8, &mut canvas);
+
         // TODO: Draw contents of memory
         // TODO: Set keymap state
-        // TODO: run this inner loop only 60 hz
+        // TODO: run this inner decode/execute loop only 60 hz
+        // TODO: update timers
 
         for event in event_pump.poll_iter() {
             match event {
