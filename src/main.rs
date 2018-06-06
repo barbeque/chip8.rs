@@ -58,7 +58,7 @@ impl ComputerState {
 
     fn write_pixel_row(&mut self, x: u8, y: u8, row: u8) -> bool {
         // TODO: fast blit method... at least faster than this
-        let base = ((y as u16) * 32 + (x as u16)) as usize;
+        let base = ((y as u16) * 64 + (x as u16)) as usize;
 
         self.gfx[base] = (row & 0x80) >> 7;
         self.gfx[base + 1] = (row & 0x40) >> 6;
@@ -69,6 +69,12 @@ impl ComputerState {
         self.gfx[base + 6] = (row & 0x2) >> 1;
         self.gfx[base + 7] = row & 0x1;
 
+        print!("row={}, ", row);
+        for d_x in 0..8 {
+            print!("{} ", self.gfx[base + d_x]);
+        }
+        println!("");
+
         // TODO: detect "unsetting" and return true
         false
     }
@@ -76,7 +82,7 @@ impl ComputerState {
     fn debug_dump_video_to_console(&self) {
         for y in 0u16..32 {
             for x in 0u16..64 {
-                let base = (y * 32 + x) as usize;
+                let base = (y * 64 + x) as usize;
                 if self.gfx[base] > 0 {
                     print!("#");
                 } else {
