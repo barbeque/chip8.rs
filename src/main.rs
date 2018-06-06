@@ -598,7 +598,7 @@ fn draw_screen<T : sdl2::render::RenderTarget>(chip8: &ComputerState, canvas: &m
     let start_x = (K_WIDTH - (64 * pixel_size)) / 2;
     let start_y = (K_HEIGHT - (32 * pixel_size)) / 2;
 
-    // FIXME: There is probably a faster way to do this. DrawRects?
+    // FIXME: There is probably a faster way to do this. FillRects?
     for y in 0..32 {
         for x in 0..64 {
             let val = chip8.gfx[y * 64 + x];
@@ -613,7 +613,7 @@ fn draw_screen<T : sdl2::render::RenderTarget>(chip8: &ComputerState, canvas: &m
                 canvas.set_draw_color(Color::RGB(0, 0, 128)); // navy blue
             }
 
-            canvas.draw_rect(rect).unwrap();
+            canvas.fill_rect(rect).unwrap();
         }
     }
 }
@@ -623,7 +623,7 @@ pub fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("rust-sdl2 demo", 800, 600)
+        .window("chip8.rs", 800, 600)
         .position_centered()
         .build()
         .unwrap();
