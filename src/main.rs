@@ -523,7 +523,19 @@ impl ComputerState {
                 self.memory[(self.index + 1) as usize] = tens;
                 self.memory[(self.index + 2) as usize] = ones;
             },
-            // TODO: dump/fill register
+            Chip8Opcode::DumpRegisters(stop_register) => {
+                // Store v0 through vX in memory starting at I
+                for register in 0..=stop_register {
+                    let value = self.get_register(register);
+                    self.memory[(self.index + register as u16) as usize] = value;
+                }
+            },
+            Chip8Opcode::FillRegisters(stop_register) => {
+                for register in 0..=stop_register {
+                    let value = self.memory[(self.index + register as u16) as usize];
+                    self.set_register(register, value);
+                }
+            },
             _ => panic!(
                 "pc={} Not implemented yet: '{:?}'",
                 self.program_counter, op
@@ -1080,5 +1092,48 @@ mod computer_tests {
         assert_eq!(computer.memory[0x200 + 0], 0);
         assert_eq!(computer.memory[0x200 + 1], 0);
         assert_eq!(computer.memory[0x200 + 2], 3);
+    }
+
+    #[test]
+    fn dump_registers_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 123);
+        computer.set_register(1, 103);
+        computer.set_register(2, 66);
+
+        computer.index = 0x200;
+
+        computer.execute(Chip8Opcode::DumpRegisters(1));
+
+        // make sure registers are not changed
+        assert_eq!(computer.get_register(0), 123);
+        assert_eq!(computer.get_register(1), 103);
+        assert_eq!(computer.get_register(2), 66);
+
+        // make sure that r0 and r1 got written, but not r2
+        assert_eq!(computer.memory[0x200 + 0], 123);
+        assert_eq!(computer.memory[0x200 + 1], 103);
+        assert_eq!(computer.memory[0x200 + 2], 0);
+    }
+
+    #[test]
+    fn fill_registers_works() {
+        let mut computer = new_test_emulator();
+        computer.index = 0x200;
+        computer.memory[0x200 + 0] = 123;
+        computer.memory[0x200 + 1] = 103;
+        computer.memory[0x200 + 2] = 66;
+
+        computer.execute(Chip8Opcode::FillRegisters(1));
+        assert_eq!(computer.get_register(0), 123);
+        assert_eq!(computer.get_register(1), 103);
+
+        // We only said up to v1, so...
+        assert_eq!(computer.get_register(2), 0);
+
+        // Make sure memory is unchanged
+        assert_eq!(computer.memory[0x200], 123);
+        assert_eq!(computer.memory[0x201], 103);
+        assert_eq!(computer.memory[0x202], 66);
     }
 }
