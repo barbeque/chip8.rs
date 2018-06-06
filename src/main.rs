@@ -28,9 +28,7 @@ struct ComputerState {
     // Sound timer
     sound_timer: u8,
     // Stack
-    stack: [u16; 16],
-    // Stack pointer
-    sp: u16,
+    stack: Vec<u16>,
     // Keyboard state
     keys: [u8; 16],
 }
@@ -45,8 +43,7 @@ impl ComputerState {
             gfx: [0u8; (64 * 32)],
             delay_timer: 0,
             sound_timer: 0,
-            stack: [0u16; 16],
-            sp: 0,
+            stack: Vec::<u16>::with_capacity(16),
             keys: [0u8; 16],
         }
 
@@ -325,9 +322,22 @@ impl ComputerState {
                     self.gfx[i] = 0;
                 }
             },
-            // TODO: Return from sub
+            Chip8Opcode::ReturnFromSubroutine => {
+                match self.stack.pop() {
+                    Some(return_to) => {
+                        self.program_counter = return_to;
+                    },
+                    None => {
+                        panic!("pc={} stack underflow", self.program_counter);
+                    }
+                }
+            },
             Chip8Opcode::Goto(address) => {
                 self.program_counter = address;
+            },
+            Chip8Opcode::CallSub(sub_address) => {
+                self.stack.push(self.program_counter); // should be 'after' the CALL since we +2 before going in here
+                self.program_counter = sub_address;
             },
             Chip8Opcode::SkipNextIfEqual(r1, value) => {
                 let v1 = self.get_register(r1);
@@ -678,6 +688,32 @@ mod computer_tests {
     }
 
     // Execute tests -------
+
+    #[test]
+    fn call_sub_works() {
+        let mut computer = new_test_emulator();
+        let original_pc = computer.program_counter;
+
+        computer.execute(Chip8Opcode::CallSub(0x80)); // big jump
+        assert_eq!(computer.program_counter, 0x80);
+
+        assert_eq!(1, computer.stack.len());
+        assert_eq!(original_pc, computer.stack[0]);
+    }
+
+    #[test]
+    fn return_from_sub_works() {
+        let mut computer = new_test_emulator();
+        let original_pc = computer.program_counter;
+
+        // Call sub, then return
+        computer.execute(Chip8Opcode::CallSub(0x80));
+        computer.execute(Chip8Opcode::ReturnFromSubroutine);
+
+        // Make sure stack is cleared
+        assert_eq!(0, computer.stack.len());
+        assert_eq!(computer.program_counter, original_pc);
+    }
 
     #[test]
     fn skip_next_if_equal_works() {
