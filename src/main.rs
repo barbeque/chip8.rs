@@ -11,6 +11,8 @@ use std::io::prelude::*;
 
 mod opcodes;
 use opcodes::*;
+mod hexfont;
+use hexfont::*;
 
 struct ComputerState {
     // 4K main memory
@@ -35,6 +37,7 @@ struct ComputerState {
 
 impl ComputerState {
     pub fn new() -> ComputerState {
+        let mut c =
         ComputerState {
             memory: [0u8; 4096],
             registers: [0u8; 16],
@@ -45,10 +48,17 @@ impl ComputerState {
             sound_timer: 0,
             stack: Vec::<u16>::with_capacity(16),
             keys: [0u8; 16],
-        }
+        };
 
         // TODO: set up a panic handler that lets us know which IP is illegal
-        // TODO: load ROM contents (font set)
+
+        // load font into lomem
+        let font = get_hex_font();
+        for offset in 0..font.len() {
+            c.memory[offset] = font[offset];
+        }
+
+        c
     }
 
     fn advance_pc(&mut self) {
