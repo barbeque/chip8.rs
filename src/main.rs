@@ -69,11 +69,11 @@ impl ComputerState {
         self.gfx[base + 6] ^= (row & 0x2) >> 1;
         self.gfx[base + 7] ^= row & 0x1;
 
-        print!("row={}, ", row);
+        /*print!("row={}, ", row);
         for d_x in 0..8 {
             print!("{} ", self.gfx[base + d_x]);
         }
-        println!("");
+        println!("");*/
 
         // TODO: detect "unsetting" and return true
         false
