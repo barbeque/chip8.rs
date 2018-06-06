@@ -419,6 +419,9 @@ impl ComputerState {
                 self.set_register(target_register, rand::random::<u8>() & value);
             },
             // TODO: Draw... lots more
+            Chip8Opcode::SetIndexRegister(value) => {
+                self.index = value;
+            },
             Chip8Opcode::JumpFromV0(offset) => {
                 let base = self.get_register(0) as u16; // v0
                 self.program_counter = offset + base; // TODO: make sure that we don't skip the first instruction here
@@ -457,6 +460,8 @@ impl ComputerState {
 
         // decode
         let decoded = self.decode(instruction);
+
+        println!("pc={} {:?}", self.program_counter, decoded); // TODO: disable in production
 
         // execute
         self.execute(decoded);
@@ -875,6 +880,13 @@ mod computer_tests {
         computer.execute(Chip8Opcode::ReadDelayTimer(0));
         assert_eq!(computer.get_register(0), 100);
         assert_eq!(computer.delay_timer, 100); // make sure the value is preserved
+    }
+
+    #[test]
+    fn set_index_register_works() {
+        let mut computer = new_test_emulator();
+        computer.execute(Chip8Opcode::SetIndexRegister(0xa0));
+        assert_eq!(computer.index, 0xa0);
     }
 
     #[test]
