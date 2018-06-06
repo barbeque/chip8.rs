@@ -74,9 +74,9 @@ impl ComputerState {
     }
 
     fn debug_dump_video_to_console(&self) {
-        for y in 0..32 {
-            for x in 0..64 {
-                let base = ((y as u16) * 32 + (x as u16)) as usize;
+        for y in 0u16..32 {
+            for x in 0u16..64 {
+                let base = (y * 32 + x) as usize;
                 if self.gfx[base] > 0 {
                     print!("#");
                 } else {
