@@ -59,6 +59,37 @@ impl ComputerState {
         self.program_counter += 2; // 2 bytes (16 bit instructions)
     }
 
+    fn write_pixel_row(&mut self, x: u8, y: u8, row: u8) -> bool {
+        // TODO: fast blit method... at least faster than this
+        let base = ((y as u16) * 32 + (x as u16)) as usize;
+
+        self.gfx[base] = (row & 0x80) >> 7;
+        self.gfx[base + 1] = (row & 0x40) >> 6;
+        self.gfx[base + 2] = (row & 0x20) >> 5;
+        self.gfx[base + 3] = (row & 0x10) >> 4;
+        self.gfx[base + 4] = (row & 0x8) >> 3;
+        self.gfx[base + 5] = (row & 0x4) >> 2;
+        self.gfx[base + 6] = (row & 0x2) >> 1;
+        self.gfx[base + 7] = row & 0x1;
+
+        // TODO: detect "unsetting" and return true
+        false
+    }
+
+    fn debug_dump_video_to_console(&self) {
+        for y in 0..32 {
+            for x in 0..64 {
+                let base = ((y as u16) * 32 + (x as u16)) as usize;
+                if self.gfx[base] > 0 {
+                    print!("#");
+                } else {
+                    print!(" ");
+                }
+            }
+            println!("");
+        }
+    }
+
     pub fn load_program(&mut self, path: &str) {
         let relative_path = PathBuf::from(path);
         let mut absolute_path = std::env::current_dir().unwrap();
@@ -418,7 +449,27 @@ impl ComputerState {
             Chip8Opcode::Random(target_register, value) => {
                 self.set_register(target_register, rand::random::<u8>() & value);
             },
-            // TODO: Draw... lots more
+            Chip8Opcode::Draw(vx, vy, height) => {
+                // sprites are 8 pixels wide
+                // each row is bit-coded from I
+                // VF=1 if any pixels go from set -> unset
+                // else VF=0
+                self.set_register(0xf, 0);
+
+                for row in 0..height {
+                    let source = self.memory[(self.index + row as u16) as usize];
+                    let y = vy + row;
+
+                    // TODO: there is probably a more clever way to do this
+                    if self.write_pixel_row(vx, y, source) {
+                        self.set_register(0xf, 1);
+                    }
+                }
+
+                // OK let's just dump the video now
+                self.debug_dump_video_to_console();
+            },
+            // TODO: keydown ops... lots more
             Chip8Opcode::SetIndexRegister(value) => {
                 self.index = value;
             },
