@@ -60,14 +60,14 @@ impl ComputerState {
         // TODO: fast blit method... at least faster than this
         let base = ((y as u16) * 64 + (x as u16)) as usize;
 
-        self.gfx[base] = (row & 0x80) >> 7;
-        self.gfx[base + 1] = (row & 0x40) >> 6;
-        self.gfx[base + 2] = (row & 0x20) >> 5;
-        self.gfx[base + 3] = (row & 0x10) >> 4;
-        self.gfx[base + 4] = (row & 0x8) >> 3;
-        self.gfx[base + 5] = (row & 0x4) >> 2;
-        self.gfx[base + 6] = (row & 0x2) >> 1;
-        self.gfx[base + 7] = row & 0x1;
+        self.gfx[base] ^= (row & 0x80) >> 7;
+        self.gfx[base + 1] ^= (row & 0x40) >> 6;
+        self.gfx[base + 2] ^= (row & 0x20) >> 5;
+        self.gfx[base + 3] ^= (row & 0x10) >> 4;
+        self.gfx[base + 4] ^= (row & 0x8) >> 3;
+        self.gfx[base + 5] ^= (row & 0x4) >> 2;
+        self.gfx[base + 6] ^= (row & 0x2) >> 1;
+        self.gfx[base + 7] ^= row & 0x1;
 
         print!("row={}, ", row);
         for d_x in 0..8 {
