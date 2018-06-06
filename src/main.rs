@@ -513,6 +513,17 @@ impl ComputerState {
                 self.index += value as u16; // any special overflow conditions?
             },
             // TODO: use sprite, etc.
+            Chip8Opcode::ReadRegisterAsBCD(register) => {
+                // Store BCD rep of Vx in I, I+1 and I+2
+                let value = self.get_register(register);
+                let hundreds = value / 100;
+                let tens = (value - hundreds * 100) / 10;
+                let ones = value - (hundreds * 100 + tens * 10);
+                self.memory[self.index as usize] = hundreds;
+                self.memory[(self.index + 1) as usize] = tens;
+                self.memory[(self.index + 2) as usize] = ones;
+            },
+            // TODO: dump/fill register
             _ => panic!(
                 "pc={} Not implemented yet: '{:?}'",
                 self.program_counter, op
@@ -1039,5 +1050,35 @@ mod computer_tests {
         computer.execute(Chip8Opcode::RegisterRegisterXor(0, 1));
         assert_eq!(computer.get_register(0), 0xf0);
         assert_eq!(computer.get_register(1), 0x0f); // make sure the y-register is not touched
+    }
+
+    #[test]
+    fn read_register_as_bcd_works() {
+        let mut computer = new_test_emulator();
+        computer.set_register(0, 123);
+        computer.set_register(1, 23);
+        computer.set_register(2, 103);
+        computer.set_register(3, 3);
+        computer.index = 0x200;
+
+        computer.execute(Chip8Opcode::ReadRegisterAsBCD(0));
+        assert_eq!(computer.memory[0x200 + 0], 1);
+        assert_eq!(computer.memory[0x200 + 1], 2);
+        assert_eq!(computer.memory[0x200 + 2], 3);
+
+        computer.execute(Chip8Opcode::ReadRegisterAsBCD(1));
+        assert_eq!(computer.memory[0x200 + 0], 0);
+        assert_eq!(computer.memory[0x200 + 1], 2);
+        assert_eq!(computer.memory[0x200 + 2], 3);
+
+        computer.execute(Chip8Opcode::ReadRegisterAsBCD(2));
+        assert_eq!(computer.memory[0x200 + 0], 1);
+        assert_eq!(computer.memory[0x200 + 1], 0);
+        assert_eq!(computer.memory[0x200 + 2], 3);
+
+        computer.execute(Chip8Opcode::ReadRegisterAsBCD(3));
+        assert_eq!(computer.memory[0x200 + 0], 0);
+        assert_eq!(computer.memory[0x200 + 1], 0);
+        assert_eq!(computer.memory[0x200 + 2], 3);
     }
 }
