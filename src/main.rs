@@ -522,7 +522,13 @@ impl ComputerState {
                 let value = self.get_register(target_register);
                 self.index += value as u16; // any special overflow conditions?
             },
-            // TODO: use sprite, etc.
+            Chip8Opcode::UseSprite(register) => {
+                let character = self.get_register(register) as u16;
+
+                // each letter is 5 bytes long,
+                // and stored in ROM starting at 0x0
+                self.index = 0x0 + (character * 5);
+            },
             Chip8Opcode::ReadRegisterAsBCD(register) => {
                 // Store BCD rep of Vx in I, I+1 and I+2
                 let value = self.get_register(register);
@@ -1102,6 +1108,21 @@ mod computer_tests {
         assert_eq!(computer.memory[0x200 + 0], 0);
         assert_eq!(computer.memory[0x200 + 1], 0);
         assert_eq!(computer.memory[0x200 + 2], 3);
+    }
+
+    #[test]
+    fn use_sprite_works() {
+        // FIXME: this probably needs a better name than UseSprite
+        let mut computer = new_test_emulator();
+
+        computer.set_register(0, 0x3);
+        computer.set_register(1, 0xf);
+
+        computer.execute(Chip8Opcode::UseSprite(0));
+        assert_eq!(computer.index, 0x0 + (0x3 * 5));
+
+        computer.execute(Chip8Opcode::UseSprite(1));
+        assert_eq!(computer.index, 0x0 + (0xf * 5));
     }
 
     #[test]
