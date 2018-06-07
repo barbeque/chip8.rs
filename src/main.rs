@@ -574,8 +574,6 @@ impl ComputerState {
 
         // execute
         self.execute(decoded);
-
-        // update timers (60Hz - need timing)
     }
 
     fn get_register(&self, register_index: Chip8Register) -> Chip8Value {
@@ -651,9 +649,7 @@ pub fn main() {
         // draw contents of screen memory
         draw_screen(&chip8, &mut canvas);
 
-        // TODO: Draw contents of memory
         // TODO: Set keymap state
-        // TODO: run this inner decode/execute loop only 60 hz
         // TODO: update timers
 
         for event in event_pump.poll_iter() {
@@ -665,6 +661,15 @@ pub fn main() {
                 } => break 'running,
                 _ => {}
             }
+        }
+
+        // Since we try to sleep for 60hz, just assume we can
+        // update timers with impunity.
+        if chip8.delay_timer > 0 {
+            chip8.delay_timer -= 1;
+        }
+        if chip8.sound_timer > 0 {
+            chip8.sound_timer -= 1;
         }
 
         canvas.present();
