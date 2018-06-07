@@ -614,18 +614,17 @@ fn draw_screen<T : sdl2::render::RenderTarget>(chip8: &ComputerState, canvas: &m
     for y in 0..32 {
         for x in 0..64 {
             let val = chip8.gfx[y * 64 + x];
-            let rect = sdl2::rect::Rect::new(
-                (start_x + (x as u32 * pixel_size)) as i32,
-                (start_y + (y as u32 * pixel_size)) as i32,
-                pixel_size, pixel_size);
 
             if val > 0 {
-                canvas.set_draw_color(Color::RGB(255, 140, 0)); // dark orange
-            } else {
-                canvas.set_draw_color(Color::RGB(0, 0, 128)); // navy blue
-            }
+                let rect = sdl2::rect::Rect::new(
+                    (start_x + (x as u32 * pixel_size)) as i32,
+                    (start_y + (y as u32 * pixel_size)) as i32,
+                    pixel_size, pixel_size);
 
-            canvas.fill_rect(rect).unwrap();
+                canvas.set_draw_color(Color::RGB(255, 140, 0)); // dark orange
+
+                canvas.fill_rect(rect).unwrap();
+            }
         }
     }
 }
@@ -667,24 +666,19 @@ pub fn main() {
     ].iter().cloned().collect();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut i = 0;
 
     let mut chip8 = ComputerState::new();
 
     chip8.load_program("roms/c8games/PONG");
 
     'running: loop {
-        i = (i + 1) % 255;
-        canvas.set_draw_color(Color::RGB(i, 64, 255 - i));
+        canvas.set_draw_color(Color::RGB(0, 0, 128));
         canvas.clear();
 
         chip8.step();
 
         // draw contents of screen memory
         draw_screen(&chip8, &mut canvas);
-
-        // TODO: Set keymap state
-        // TODO: update timers
 
         for event in event_pump.poll_iter() {
             match event {
