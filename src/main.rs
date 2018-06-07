@@ -32,7 +32,7 @@ struct ComputerState {
     // Stack
     stack: Vec<u16>,
     // Keyboard state
-    keys: [u8; 16],
+    keys: [bool; 16],
 }
 
 impl ComputerState {
@@ -47,7 +47,7 @@ impl ComputerState {
             delay_timer: 0,
             sound_timer: 0,
             stack: Vec::<u16>::with_capacity(16),
-            keys: [0u8; 16],
+            keys: [false; 16],
         };
 
         // TODO: set up a panic handler that lets us know which IP is illegal
@@ -61,7 +61,7 @@ impl ComputerState {
         c
     }
 
-    fn advance_pc(&mut self) {
+    fn skip_next_instruction(&mut self) {
         // advance the instruction pointer
         self.program_counter += 2; // 2 bytes (16 bit instructions)
     }
@@ -360,20 +360,20 @@ impl ComputerState {
                 if v1 == value {
                     // jump ahead one instruction,
                     // fetch will jump automatically
-                    self.advance_pc();
+                    self.skip_next_instruction();
                 }
             }
             Chip8Opcode::SkipNextIfNotEqual(r1, value) => {
                 let v1 = self.get_register(r1);
                 if v1 != value {
-                    self.advance_pc();
+                    self.skip_next_instruction();
                 }
             },
             Chip8Opcode::SkipNextIfRegistersEqual(r1, r2) => {
                 let v1 = self.get_register(r1);
                 let v2 = self.get_register(r2);
                 if v1 == v2 {
-                    self.advance_pc();
+                    self.skip_next_instruction();
                 }
             },
             Chip8Opcode::SetRegister(r1, value) => {
@@ -457,7 +457,7 @@ impl ComputerState {
                 let v1 = self.get_register(r1);
                 let v2 = self.get_register(r2);
                 if v1 != v2 {
-                    self.advance_pc();
+                    self.skip_next_instruction();
                 }
             },
             Chip8Opcode::LeftShiftRegisterByRegister(r1, r2) => {
@@ -472,6 +472,13 @@ impl ComputerState {
                 self.set_register(0xf, msb);
             },
             // TODO: Call Sub... lots more
+            Chip8Opcode::SetIndexRegister(value) => {
+                self.index = value;
+            },
+            Chip8Opcode::JumpFromV0(offset) => {
+                let base = self.get_register(0) as u16; // v0
+                self.program_counter = offset + base; // TODO: make sure that we don't skip the first instruction here
+            },
             Chip8Opcode::Random(target_register, value) => {
                 self.set_register(target_register, rand::random::<u8>() & value);
             },
@@ -498,21 +505,27 @@ impl ComputerState {
                 // OK let's just dump the video now
                 self.debug_dump_video_to_console();
             },
-            // TODO: keydown ops... lots more
-            Chip8Opcode::SetIndexRegister(value) => {
-                self.index = value;
+            Chip8Opcode::SkipNextIfKeyDown(register) => {
+                let key = self.get_register(register) as usize;
+                if self.keys[key] {
+                    self.skip_next_instruction();
+                }
             },
-            Chip8Opcode::JumpFromV0(offset) => {
-                let base = self.get_register(0) as u16; // v0
-                self.program_counter = offset + base; // TODO: make sure that we don't skip the first instruction here
+            Chip8Opcode::SkipNextIfKeyUp(register) => {
+                let key = self.get_register(register) as usize;
+                if !self.keys[key] {
+                    self.skip_next_instruction();
+                }
             },
-            Chip8Opcode::SetDelayTimer(target_register) => {
-                let value = self.get_register(target_register);
-                self.delay_timer = value;
-            },
+            // TODO: skip next if key up
             Chip8Opcode::ReadDelayTimer(destination_register) => {
                 let timer = self.delay_timer;
                 self.set_register(destination_register, timer);
+            },
+            // TODO: block on keypress
+            Chip8Opcode::SetDelayTimer(target_register) => {
+                let value = self.get_register(target_register);
+                self.delay_timer = value;
             },
             Chip8Opcode::SetSoundTimer(target_register) => {
                 let value = self.get_register(target_register);
