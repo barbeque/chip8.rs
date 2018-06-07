@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 use std::fs::File;
 use std::io::prelude::*;
+use std::collections::HashMap;
 
 mod opcodes;
 use opcodes::*;
@@ -645,6 +646,26 @@ pub fn main() {
     canvas.clear();
     canvas.present();
 
+    // QWERTY keybindings, left handed
+    let keybindings: HashMap<Keycode, usize> = [
+    (Keycode::Num1, 1),
+    (Keycode::Num2, 2),
+    (Keycode::Num3, 3),
+    (Keycode::Num4, 0xc),
+    (Keycode::Q, 4),
+    (Keycode::W, 5),
+    (Keycode::E, 6),
+    (Keycode::R, 0xd),
+    (Keycode::A, 7),
+    (Keycode::S, 8),
+    (Keycode::D, 9),
+    (Keycode::F, 0xe),
+    (Keycode::Z, 0xa),
+    (Keycode::X, 0),
+    (Keycode::C, 0xb),
+    (Keycode::V, 0xf)
+    ].iter().cloned().collect();
+
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 0;
 
@@ -672,6 +693,20 @@ pub fn main() {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => break 'running,
+                Event::KeyDown {
+                    keycode: Some(key), ..
+                } => {
+                    if keybindings.contains_key(&key) {
+                        chip8.keys[keybindings[&key]] = true;
+                    }
+                },
+                Event::KeyUp {
+                    keycode: Some(key), ..
+                } => {
+                    if keybindings.contains_key(&key) {
+                        chip8.keys[keybindings[&key]] = false;
+                    }
+                },
                 _ => {}
             }
         }
