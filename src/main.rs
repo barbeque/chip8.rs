@@ -503,7 +503,7 @@ impl ComputerState {
                 }
 
                 // OK let's just dump the video now
-                self.debug_dump_video_to_console();
+                //self.debug_dump_video_to_console();
             },
             Chip8Opcode::SkipNextIfKeyDown(register) => {
                 let key = self.get_register(register) as usize;
@@ -583,7 +583,7 @@ impl ComputerState {
         // decode
         let decoded = self.decode(instruction);
 
-        println!("pc={} {:?}", self.program_counter, decoded); // TODO: disable in production
+        //println!("pc={} {:?}", self.program_counter, decoded); // TODO: disable in production
 
         // execute
         self.execute(decoded);
