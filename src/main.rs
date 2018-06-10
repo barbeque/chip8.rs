@@ -70,24 +70,23 @@ impl ComputerState {
     fn write_pixel_row(&mut self, x: u8, y: u8, row: u8) -> bool {
         // TODO: fast blit method... at least faster than this
         let base = ((y as u16) * 64 + (x as u16)) as usize;
+        let mut offset = 0x80;
+        let mut a_pixel_became_zero = false;
 
-        self.gfx[base] ^= (row & 0x80) >> 7;
-        self.gfx[base + 1] ^= (row & 0x40) >> 6;
-        self.gfx[base + 2] ^= (row & 0x20) >> 5;
-        self.gfx[base + 3] ^= (row & 0x10) >> 4;
-        self.gfx[base + 4] ^= (row & 0x8) >> 3;
-        self.gfx[base + 5] ^= (row & 0x4) >> 2;
-        self.gfx[base + 6] ^= (row & 0x2) >> 1;
-        self.gfx[base + 7] ^= row & 0x1;
+        for i in 0..8 {
+            let new = (row & offset) >> (7 - i);
+            let pixel = self.gfx[base + i] ^ new;
+            if pixel == 0 && self.gfx[base + i] > 0 {
+                a_pixel_became_zero = true;
+            }
 
-        /*print!("row={}, ", row);
-        for d_x in 0..8 {
-            print!("{} ", self.gfx[base + d_x]);
+            self.gfx[base + i] = pixel;
+
+            offset >>= 1;
         }
-        println!("");*/
 
-        // TODO: detect "unsetting" and return true
-        false
+        // Return true if a pixel became 'unset' by this
+        a_pixel_became_zero
     }
 
     fn debug_dump_video_to_console(&self) {
