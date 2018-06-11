@@ -89,20 +89,6 @@ impl ComputerState {
         a_pixel_became_zero
     }
 
-    fn debug_dump_video_to_console(&self) {
-        for y in 0u16..32 {
-            for x in 0u16..64 {
-                let base = (y * 64 + x) as usize;
-                if self.gfx[base] > 0 {
-                    print!("#");
-                } else {
-                    print!(" ");
-                }
-            }
-            println!("");
-        }
-    }
-
     pub fn load_program(&mut self, path: &str) {
         let relative_path = PathBuf::from(path);
         let mut absolute_path = std::env::current_dir().unwrap();
@@ -501,9 +487,6 @@ impl ComputerState {
                         self.set_register(0xf, 1);
                     }
                 }
-
-                // OK let's just dump the video now
-                //self.debug_dump_video_to_console();
             },
             Chip8Opcode::SkipNextIfKeyDown(register) => {
                 let key = self.get_register(register) as usize;
