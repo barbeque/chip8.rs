@@ -34,6 +34,10 @@ struct ComputerState {
     stack: Vec<u16>,
     // Keyboard state
     keys: [bool; 16],
+    // Blocked on keypress?
+    waiting_for_keypress: bool,
+    // The key that was pressed during the last block will be stored in this register
+    waiting_for_keypress_target: usize
 }
 
 impl ComputerState {
@@ -49,6 +53,8 @@ impl ComputerState {
             sound_timer: 0,
             stack: Vec::<u16>::with_capacity(16),
             keys: [false; 16],
+            waiting_for_keypress: false,
+            waiting_for_keypress_target: 0
         };
 
         // TODO: set up a panic handler that lets us know which IP is illegal
@@ -499,12 +505,14 @@ impl ComputerState {
                     self.skip_next_instruction();
                 }
             },
-            // TODO: skip next if key up
             Chip8Opcode::ReadDelayTimer(destination_register) => {
                 let timer = self.delay_timer;
                 self.set_register(destination_register, timer);
             },
-            // TODO: block on keypress
+            Chip8Opcode::BlockOnKeyPress(target_register) => {
+                self.waiting_for_keypress = true;
+                self.waiting_for_keypress_target = target_register as usize;
+            },
             Chip8Opcode::SetDelayTimer(target_register) => {
                 let value = self.get_register(target_register);
                 self.delay_timer = value;
@@ -650,13 +658,15 @@ pub fn main() {
 
     let mut chip8 = ComputerState::new();
 
-    chip8.load_program("roms/c8games/PONG2");
+    chip8.load_program("roms/c8games/INVADERS");
 
     'running: loop {
         canvas.set_draw_color(Color::RGB(0, 0, 128));
         canvas.clear();
 
-        chip8.step();
+        if !chip8.waiting_for_keypress {
+            chip8.step();
+        }
 
         // draw contents of screen memory
         draw_screen(&chip8, &mut canvas);
@@ -673,6 +683,14 @@ pub fn main() {
                 } => {
                     if keybindings.contains_key(&key) {
                         chip8.keys[keybindings[&key]] = true;
+
+                        if chip8.waiting_for_keypress {
+                            // Disable the block
+                            chip8.waiting_for_keypress = false;
+                            // Store the key that was pressed in the register
+                            // they told us to store it in
+                            chip8.registers[chip8.waiting_for_keypress_target] = keybindings[&key] as u8;
+                        }
                     }
                 },
                 Event::KeyUp {
@@ -1079,6 +1097,17 @@ mod computer_tests {
         computer.execute(Chip8Opcode::ReadDelayTimer(0));
         assert_eq!(computer.get_register(0), 100);
         assert_eq!(computer.delay_timer, 100); // make sure the value is preserved
+    }
+
+    #[test]
+    fn block_on_keypress_works() {
+        // only going to test the computer state side of things,
+        // the actual emulator is too annoying to test
+        let mut computer = new_test_emulator();
+        assert_eq!(computer.waiting_for_keypress, false); // should be false by default
+        computer.execute(Chip8Opcode::BlockOnKeyPress(0xc));
+        assert!(computer.waiting_for_keypress); // should now be blocked
+        assert_eq!(computer.waiting_for_keypress_target, 0xc); // should have the right register set
     }
 
     #[test]
