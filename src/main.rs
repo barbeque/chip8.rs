@@ -439,13 +439,6 @@ impl ComputerState {
                     self.set_register(0xf, 0);
                 }
             },
-            Chip8Opcode::SkipNextIfRegistersNotEqual(r1, r2) => {
-                let v1 = self.get_register(r1);
-                let v2 = self.get_register(r2);
-                if v1 != v2 {
-                    self.skip_next_instruction();
-                }
-            },
             Chip8Opcode::LeftShiftRegisterByRegister(r1, r2) => {
                 let v2 = self.get_register(r2);
                 let msb = (v2 & 0x80) >> 7;
@@ -457,7 +450,13 @@ impl ComputerState {
                 // Set VF to the most significant bit of v2 before the shift
                 self.set_register(0xf, msb);
             },
-            // TODO: Call Sub... lots more
+            Chip8Opcode::SkipNextIfRegistersNotEqual(r1, r2) => {
+                let v1 = self.get_register(r1);
+                let v2 = self.get_register(r2);
+                if v1 != v2 {
+                    self.skip_next_instruction();
+                }
+            },
             Chip8Opcode::SetIndexRegister(value) => {
                 self.index = value;
             },
@@ -651,7 +650,7 @@ pub fn main() {
 
     let mut chip8 = ComputerState::new();
 
-    chip8.load_program("roms/c8games/PONG");
+    chip8.load_program("roms/c8games/PONG2");
 
     'running: loop {
         canvas.set_draw_color(Color::RGB(0, 0, 128));
