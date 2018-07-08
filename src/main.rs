@@ -10,6 +10,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::collections::HashMap;
 use std::time::Instant;
+use std::env;
 
 mod opcodes;
 use opcodes::*;
@@ -659,7 +660,15 @@ pub fn main() {
 
     let mut chip8 = ComputerState::new();
 
-    chip8.load_program("roms/c8games/INVADERS");
+    let args: Vec<_> = env::args().collect();
+    if args.len() > 1 {
+        let user_program_path = &args[1];
+        chip8.load_program(user_program_path);
+    }
+    else {
+        // default args package - TODO: make an actual config object if there are a lot of args added
+        chip8.load_program("roms/c8games/PONG");
+    }
 
     'running: loop {
         let start = Instant::now();
