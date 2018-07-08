@@ -720,12 +720,13 @@ pub fn main() {
 
         let elapsed = start.elapsed();
         // TODO: change this to .as_millis once the nightly goes live
-        let ms_this_frame = elapsed.as_secs() * 1000 + (elapsed.subsec_millis() as u64);
+        let ms_this_frame = (elapsed.as_secs() * 1000) as f64 + ((elapsed.subsec_nanos() as f32 / 1000.0) as f64);
         // sleep for the remainder of the duration of this timeslice
+        //println!("ms this frame = {}", ms_this_frame);
 
         // at 60hz, each slice should be 1000 / 60 millis long
-        if ms_this_frame < (1000 / 60) {
-            ::std::thread::sleep(Duration::from_millis((1000 / 60) - ms_this_frame));
+        if ms_this_frame < (1000.0 / 60.0) {
+            ::std::thread::sleep(Duration::from_millis((1000 / 60) - ms_this_frame as u64));
         }
     }
 }
