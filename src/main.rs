@@ -9,6 +9,7 @@ use std::time::Duration;
 use std::fs::File;
 use std::io::prelude::*;
 use std::collections::HashMap;
+use std::time::Instant;
 
 mod opcodes;
 use opcodes::*;
@@ -661,6 +662,8 @@ pub fn main() {
     chip8.load_program("roms/c8games/INVADERS");
 
     'running: loop {
+        let start = Instant::now();
+
         canvas.set_draw_color(Color::RGB(0, 0, 128));
         canvas.clear();
 
@@ -714,7 +717,16 @@ pub fn main() {
         }
 
         canvas.present();
-        ::std::thread::sleep(Duration::new(0, 1_000_000u32 / 60));
+
+        let elapsed = start.elapsed();
+        // TODO: change this to .as_millis once the nightly goes live
+        let ms_this_frame = elapsed.as_secs() * 1000 + (elapsed.subsec_millis() as u64);
+        // sleep for the remainder of the duration of this timeslice
+
+        // at 60hz, each slice should be 1000 / 60 millis long
+        if ms_this_frame < (1000 / 60) {
+            ::std::thread::sleep(Duration::from_millis((1000 / 60) - ms_this_frame));
+        }
     }
 }
 
