@@ -487,7 +487,7 @@ impl ComputerState {
 
                 for row in 0..height {
                     let source = self.memory[(self.index + row as u16) as usize];
-                    let y = vy + row;
+                    let y = (vy + row) % 32; // FIXME: constant for this
 
                     // TODO: there is probably a more clever way to do this
                     if self.write_pixel_row(vx, y, source) {
