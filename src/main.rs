@@ -88,7 +88,7 @@ impl ComputerState {
             if x + i as u8 >= 64 {
                 // part of the sprite is offscreen, wrap over to the left
                 // and re-calculate the index target
-                target = ((y as u16) * 64 + (i as u16)) as usize;
+                target = ((y as u16) * 64 + ((x + i as u8) % 64) as u16) as usize;
             }
 
             let pixel = self.gfx[target] ^ new;
