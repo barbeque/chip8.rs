@@ -83,12 +83,20 @@ impl ComputerState {
 
         for i in 0..8 {
             let new = (row & offset) >> (7 - i);
-            let pixel = self.gfx[base + i] ^ new;
-            if pixel == 0 && self.gfx[base + i] > 0 {
+
+            let mut target: usize = base + i;
+            if x + i as u8 >= 64 {
+                // part of the sprite is offscreen, wrap over to the left
+                // and re-calculate the index target
+                target = ((y as u16) * 64 + (i as u16)) as usize;
+            }
+
+            let pixel = self.gfx[target] ^ new;
+            if pixel == 0 && self.gfx[target] > 0 {
                 a_pixel_became_zero = true;
             }
 
-            self.gfx[base + i] = pixel;
+            self.gfx[target] = pixel;
 
             offset >>= 1;
         }
