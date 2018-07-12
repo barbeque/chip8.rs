@@ -59,8 +59,6 @@ impl ComputerState {
             waiting_for_keypress_target: 0
         };
 
-        // TODO: set up a panic handler that lets us know which IP is illegal
-
         // load font into lomem
         let font = get_hex_font();
         for offset in 0..font.len() {
@@ -271,7 +269,6 @@ impl ComputerState {
         }
         else if top_nibble == 0xd {
             // draw sprite
-            // DXYN
             let x_register = ((instruction & 0x0f00) >> 8) as Chip8Register;
             let y_register = ((instruction & 0x00f0) >> 4) as Chip8Register;
             let sprite = (instruction & 0x000f) as u8;
@@ -478,7 +475,7 @@ impl ComputerState {
             },
             Chip8Opcode::JumpFromV0(offset) => {
                 let base = self.get_register(0) as u16; // v0
-                self.program_counter = offset + base; // TODO: make sure that we don't skip the first instruction here
+                self.program_counter = offset + base;
             },
             Chip8Opcode::Random(target_register, value) => {
                 self.set_register(target_register, rand::random::<u8>() & value);
