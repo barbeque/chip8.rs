@@ -132,6 +132,7 @@ mod font_tests {
         let font = get_hex_font();
         for i in 0..font.len() {
             assert!(font[i] <= 0xf0);
+            assert!(font[i] > 0x00);
         }
     }
 }

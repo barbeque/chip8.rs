@@ -687,6 +687,8 @@ pub fn main() {
         // draw contents of screen memory
         draw_screen(&chip8, &mut canvas);
 
+        // TODO: handle sound beep (sound timer > 0)
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
