@@ -4,6 +4,7 @@ extern crate rand;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
+use sdl2::audio::{AudioCallback, AudioSpecDesired};
 use std::path::PathBuf;
 use std::time::Duration;
 use std::fs::File;
@@ -624,15 +625,51 @@ fn draw_screen<T : sdl2::render::RenderTarget>(chip8: &ComputerState, canvas: &m
     }
 }
 
+struct BeeperTone {
+    volume: f32,
+    phase_inc : f32,
+    phase: f32
+}
+
+impl AudioCallback for BeeperTone {
+    type Channel = f32;
+
+    fn callback(&mut self, out: &mut [f32]) {
+        // 440 / frequency
+
+        for x in out.iter_mut() {
+            *x = if self.phase <= 0.5 { self.volume } else { -self.volume };
+            self.phase = (self.phase + self.phase_inc) % 1.0;
+            // stolen from the SDL2 rust square wave example: https://github.com/Rust-SDL2/rust-sdl2/blob/master/examples/audio-squarewave.rs
+        }
+    }
+}
+
 pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
+    let audio_subsystem = sdl_context.audio().unwrap();
 
     let window = video_subsystem
         .window("chip8.rs", 800, 600)
         .position_centered()
         .build()
         .unwrap();
+
+    let desired_audio_spec = AudioSpecDesired {
+        freq: Some(44_100),
+        channels: Some(1), // mono
+        samples: None
+    };
+
+    let sound = audio_subsystem.open_playback(None, &desired_audio_spec, |spec| {
+        BeeperTone {
+            // 220hz is a pleasant atari-esque beep
+            phase_inc: 220.0 / spec.freq as f32,
+            phase: 0.0,
+            volume: 0.25
+        }
+    }).unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
 
@@ -687,7 +724,11 @@ pub fn main() {
         // draw contents of screen memory
         draw_screen(&chip8, &mut canvas);
 
-        // TODO: handle sound beep (sound timer > 0)
+        if chip8.sound_timer <= 0 {
+            sound.pause(); // stop playing sound
+        } else {
+            sound.resume(); // continue playing sound
+        }
 
         for event in event_pump.poll_iter() {
             match event {
