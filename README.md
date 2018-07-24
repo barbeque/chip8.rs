@@ -5,7 +5,7 @@ chip8.rs is an emulator for the [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) i
 
 ## Building
 ### macOS
- 1. Install SDL2, SDL2_image, SDL2_mixer and SDL2_ttf frameworks [from the libsdl website](https://www.libsdl.org/download-2.0.php).
+ 1. Install the SDL2 framework [from the libsdl website](https://www.libsdl.org/download-2.0.php). Future versions may require SDL2_ttf.
  2. Make sure that your Rust build environment is up to date.
  3. `cargo run` should launch the emulator with a default game.
 
