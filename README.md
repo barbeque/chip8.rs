@@ -1,7 +1,7 @@
 # chip8.rs
 ![build status](https://travis-ci.org/barbeque/chip8.rs.svg?branch=master)
 
-chip8.rs is an emulator for the [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) interpreted game language, written in Rust.
+chip8.rs is an emulator for the [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) interpreted game language, written in [Rust](https://www.rust-lang.org/).
 
 ## Building
 ### macOS
